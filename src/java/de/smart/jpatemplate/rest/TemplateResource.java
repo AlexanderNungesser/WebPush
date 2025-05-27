@@ -74,7 +74,7 @@ public class TemplateResource {
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not create ecause of ... \"]}"))
-    public Response get(
+    public Response create(
             @Parameter(description = "TemplateThings json representation") TemplateThing templateThing,
             @Context HttpHeaders headers) {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
@@ -87,6 +87,7 @@ public class TemplateResource {
     }
 
     @GET
+    @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     // Enable SmartUserAuth to activate user rights management for this resource
     //@SmartUserAuth
@@ -104,7 +105,8 @@ public class TemplateResource {
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get users because of ... \"]}"))
-    public Response get(@Context HttpHeaders headers) {
+    public Response get(@Parameter(description = "Datasets id") Long id,
+            @Context HttpHeaders headers) {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
         Configuration conf = new Configuration();
 
@@ -117,20 +119,20 @@ public class TemplateResource {
     @Produces(MediaType.APPLICATION_JSON)
     // Enable SmartUserAuth to activate user rights management for this resource
     //@SmartUserAuth
-    @Operation(summary = "Lists users",
-            description = "Lists all users from database.")
+    @Operation(summary = "Lists templateThings",
+            description = "Lists all templateThings from database.")
     @APIResponse(
             responseCode = "200",
-            description = "Users requested",
+            description = "TemplateThings requested",
             content = @Content(
                     mediaType = "application/json",
-                    example = "{\"records\" : [{\"id\" :  1, \"name\" : \"Mustermann\"}]}"
+                    example = "{\"records\" : [{\"id\" :  1, \"title\" : \"Mustertitel\"}]}"
             ))
     @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
-                    example = "{\"errors\" : [ \" Could not get users: Because of ... \"]}"))
+                    example = "{\"errors\" : [ \" Could not list because of ... \"]}"))
     public Response list(@Context HttpHeaders headers) {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
         Configuration conf = new Configuration();

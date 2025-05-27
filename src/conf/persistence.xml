@@ -3,7 +3,7 @@
     <persistence-unit name="SmartDataPU" transaction-type="JTA">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <!-- TODO Change this to a resource that reflects your application name -->
-        <jta-data-source>jdbc/SmartData</jta-data-source>
+        <jta-data-source>jdbc/SmartDataLyser</jta-data-source>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <shared-cache-mode>NONE</shared-cache-mode>
         <properties>

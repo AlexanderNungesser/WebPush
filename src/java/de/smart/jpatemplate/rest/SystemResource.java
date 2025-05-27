@@ -35,7 +35,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "System", description = "SmartData system informations and configuration")
 public class SystemResource {
 
-    @PersistenceContext(unitName = "SmartUserPU")
+    @PersistenceContext(unitName = "SmartDataPU")
     private EntityManager em;
 
     @jakarta.annotation.Resource

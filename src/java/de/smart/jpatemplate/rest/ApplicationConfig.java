@@ -7,7 +7,7 @@ import jakarta.ws.rs.core.Application;
  * Automatisch Erstellte Klasse durch Netbeans, verwaltet REST Klassen
  * @author Nils Leunig, dstarke
  */
-@jakarta.ws.rs.ApplicationPath("smartuser")
+@jakarta.ws.rs.ApplicationPath("smarttemplate")
 public class ApplicationConfig extends Application {
 
     @Override
