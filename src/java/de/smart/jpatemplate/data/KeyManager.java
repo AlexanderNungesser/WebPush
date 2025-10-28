@@ -7,8 +7,13 @@ package de.smart.jpatemplate.data;
 import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.File;
 import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.KeyPairGenerator;
 import java.security.spec.ECGenParameterSpec;
@@ -17,9 +22,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPublicKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.PEMException;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -54,29 +62,58 @@ public class KeyManager {
     }
     
     
-    private static void writeKeyToFile(String filename, String title, byte[] bytes) throws IOException {
-        String base64 = Base64.getMimeEncoder(64, "\n".getBytes())
-                .encodeToString(bytes);
+    private static void writeKeysToFile(String path, KeyPair keypair) throws IOException {
+        String publicKey = Base64.getMimeEncoder(64, "\n".getBytes())
+                .encodeToString(keypair.getPublic().getEncoded());        
+        String privateKey = Base64.getMimeEncoder(64, "\n".getBytes())
+                .encodeToString(keypair.getPrivate().getEncoded());
+        File file = new File(path);
+        if (!file.exists()) {
+            try {
+                file.createNewFile(); 
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         
-        try (FileWriter writer = new FileWriter(filename, StandardCharsets.US_ASCII)) {
-            writer.write("-----BEGIN " + title + "-----\n");
-            writer.write(base64 + "\n");
-            writer.write("-----END " + title + "-----\n");
+        try (FileWriter writer = new FileWriter(path, StandardCharsets.US_ASCII)) {
+            writer.write("-----BEGIN PRIVATE KEY-----\n");
+            writer.write(privateKey + "\n");
+            writer.write("-----END PRIVATE KEY-----\n");            
+            writer.write("-----BEGIN PUBLIC KEY-----\n");
+            writer.write(publicKey + "\n");
+            writer.write("-----END PUBLIC KEY-----");
         }
     }
     
-    private static KeyPair readKeyPair(String path){
-        PEMKeyPair pemKeyPair;
-        
-        try (InputStream inputStream = KeyManager.class.getResourceAsStream(path)) {
-            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-            PEMParser pemParser;
-            pemParser = new PEMParser(inputStreamReader);
-            pemKeyPair = (PEMKeyPair) pemParser.readObject();
-            return new JcaPEMKeyConverter().getKeyPair(pemKeyPair);
-        }catch(Exception e){
-            return null;
+    private static KeyPair readKeyPair(String path) {
+        try (FileReader fileReader = new FileReader(path);
+             PEMParser pemParser = new PEMParser(fileReader)) {
+
+            Object object;
+            PrivateKey privateKey = null;
+            PublicKey publicKey = null;
+            JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME);
+
+            while ((object = pemParser.readObject()) != null) {
+                if (object instanceof PEMKeyPair pEMKeyPair) {
+                    return converter.getKeyPair(pEMKeyPair);
+                } else if (object instanceof PrivateKeyInfo privateKeyInfo) {
+                    privateKey = converter.getPrivateKey(privateKeyInfo);
+                } else if (object instanceof SubjectPublicKeyInfo subjectPublicKeyInfo) {
+                    publicKey = converter.getPublicKey(subjectPublicKeyInfo);
+                }
+            }
+
+            if (privateKey != null && publicKey != null) {
+                System.out.println("Read an existing Keypair!");
+                return new KeyPair(publicKey, privateKey);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return null;
     }
     
     private static void initProvider() {
@@ -86,12 +123,12 @@ public class KeyManager {
     }
     
     private static KeyPair generateKeyPair() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, IOException{
+        System.out.println("Generating a new key Pair!");
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDH");
         keyGen.initialize(new ECGenParameterSpec("secp256r1"));
         KeyPair keyPair = keyGen.generateKeyPair();
-
-        writeKeyToFile("vapid_keypair.pem", "EC PRIVATE KEY", keyPair.getPrivate().getEncoded());
-        writeKeyToFile("vapid_keypair.pem", "PUBLIC KEY", keyPair.getPublic().getEncoded());
+        
+        writeKeysToFile(KEY_PATH, keyPair);
 
         return keyPair;
     }
