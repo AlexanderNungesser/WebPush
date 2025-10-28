@@ -21,19 +21,17 @@ import de.smart.jpatemplate.data.ReadVAPIDKeys;
 
 @Path("/push")
 public class PushResource {
-    private static final String PUBLIC_KEY = "";
-    private static final String PRIVATE_KEY = "";
-    //private static KeyPair KEY_PAIR = null;
-    private static final String SUBJECT = "mailto:max.steidle@hsbi.de";
+    private static KeyPair KEY_PAIR = null;
+    private static final String SUBJECT = "mailto:max.mustermann@hsbi.de";
     private static final PushStorage PushStorage = new PushStorage();
     
     @GET
     @Path("/key")
     public String getKey() {
-        //if (KEY_PAIR == null){
-        //    KEY_PAIR = ReadVAPIDKeys.getKeyPair();
-        //}
-        return PUBLIC_KEY;//ReadVAPIDKeys.convertVAPIDKey(KEY_PAIR);
+        if (KEY_PAIR == null){
+            KEY_PAIR = ReadVAPIDKeys.getKeyPair();
+        }
+        return ReadVAPIDKeys.convertVAPIDKey(KEY_PAIR);
     }
     
     @POST
@@ -51,8 +49,8 @@ public class PushResource {
         String result = "Notifications gesendet an !";
         for (PushSubscription sub : PushStorage.getAll()) {
             Notification notification;
-            PushService pushService = new PushService().setPrivateKey(PRIVATE_KEY).setPublicKey(PUBLIC_KEY)
-                                    //.setKeyPair(KEY_PAIR)
+            PushService pushService = new PushService()
+                                    .setKeyPair(KEY_PAIR)
                                     .setSubject(SUBJECT);
 
             String payload = "{\"title\":\"Hallo von Payara!\",\"body\":\"Dies ist eine Push Notification.\"}";

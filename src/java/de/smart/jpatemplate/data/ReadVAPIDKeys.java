@@ -71,7 +71,7 @@ public class ReadVAPIDKeys {
     
     private static KeyPair generateKeyPair() {
         try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDH");
             keyGen.initialize(new ECGenParameterSpec("secp256r1"));
             KeyPair keyPair = keyGen.generateKeyPair();
             
