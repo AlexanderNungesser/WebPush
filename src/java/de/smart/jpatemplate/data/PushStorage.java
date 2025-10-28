@@ -1,37 +1,42 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package de.smart.jpatemplate.data;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
- * @author maxst
+ * Class used for storing PushSubscriptions.
  */
 public class PushStorage {
-    // Thread-sichere Liste für parallele Zugriffe
     private static final List<PushSubscription> subscriptions =
             Collections.synchronizedList(new ArrayList<>());
 
-    // Neue Subscription speichern (wenn noch nicht vorhanden)
+    /**
+     * Add a new subscription.
+     * @param sub the subscription
+     */
     public static void add(PushSubscription sub) {
         if (sub != null && sub.getEndpoint() != null) {
             boolean exists = subscriptions.stream()
                     .anyMatch(s -> s.getEndpoint().equals(sub.getEndpoint()));
             if (!exists) {
                 subscriptions.add(sub);
-                System.out.println("Neue PushSubscription gespeichert: " + sub.getEndpoint());
+                System.out.println("Saved new PushSubscription: " + sub.getEndpoint());
             }
         }
     }
 
-    // Alle gespeicherten Subscriptions abrufen
+    /**
+     * Get all current subscriptions.
+     * @return a list containing all subscriptions
+     */
     public static List<PushSubscription> getAll() {
         return subscriptions;
     }
 
-    // Alle Subscriptions löschen (z. B. beim Server-Neustart)
+    /**
+     * Clear current subscriptions.
+     */
     public static void clear() {
         subscriptions.clear();
     }
