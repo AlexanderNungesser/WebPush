@@ -27,9 +27,11 @@ public class ApplicationConfig extends Application {
     private void addRestResourceClasses(Set<Class<?>> resources) {
         resources.add(de.fhbielefeld.scl.rest.exceptions.handlers.GeneralExceptionMapper.class);
         resources.add(de.fhbielefeld.scl.rest.util.CORSFilter.class);
+        resources.add(de.fhbielefeld.scl.rest.util.MirrorRequestFilter.class);
         resources.add(de.fhbielefeld.smartuser.rest.AuthenticationFilter.class);
         resources.add(de.fhbielefeld.smartuser.rest.OwnershipFilter.class);
         resources.add(de.ngi.restutils.LoggingFilter.class);
+        resources.add(de.smart.jpatemplate.rest.ManagementResource.class);
         resources.add(de.smart.jpatemplate.rest.PushResource.class);
         resources.add(de.smart.jpatemplate.rest.SystemResource.class);
         resources.add(de.smart.jpatemplate.rest.TemplateResource.class);
