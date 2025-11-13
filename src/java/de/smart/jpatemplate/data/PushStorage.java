@@ -25,6 +25,10 @@ public class PushStorage {
             }
         }
     }
+    
+    public static boolean remove(String endpoint) {
+        return subscriptions.removeIf(sub -> sub.getEndpoint().equals(endpoint));
+    }
 
     /**
      * Get all current subscriptions.

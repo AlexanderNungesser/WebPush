@@ -10,6 +10,7 @@ import jakarta.ws.rs.core.MediaType;
 import de.smart.jpatemplate.data.PushSubscription;
 import de.smart.jpatemplate.data.PushStorage;
 import de.smart.jpatemplate.data.KeyManager;
+import de.smart.jpatemplate.data.MessagePayload;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.ArrayList;
@@ -31,58 +32,85 @@ public class PushResource {
             KEY_PAIR = KeyManager.getKeyPair();
             pushService.setKeyPair(KEY_PAIR);
         }
-        return Response.ok("{\"key\":\"" + KeyManager.convertPublicKey(KEY_PAIR) + "\"}").build();
+        
+        return Response.ok(Map.of("key", KeyManager.convertPublicKey(KEY_PAIR))).build();
     }
 
     @POST
     @Path("/subscribe")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response subscribe(PushSubscription subscription) {
+        if (subscription == null || subscription.getEndpoint() == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "Subscription data missing"))
+                    .build();
+        }
+        
         PushStorage.add(subscription);
-        return Response.ok("{\"status\":\"subscribed\"}").build();
+        return Response.status(Response.Status.CREATED)
+                .entity(Map.of("status", "subscribed"))
+                .build();
+    }
+    
+    @DELETE
+    @Path("/subscribe/{id}")
+    public Response deleteSubscription(@PathParam("id") String endpoint) {
+        boolean removed = PushStorage.remove(endpoint);
+
+        if (!removed) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(Map.of("error", "Subscription not found"))
+                    .build();
+        }
+
+        return Response.ok(Map.of("status", "deleted")).build();
     }
 
     @POST
     @Path("/send")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response sendNotification(String message) {
+    public Response sendNotification(MessagePayload payload) {
+        
+        if (payload == null || payload.title == null || payload.body == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "Missing required fields"))
+                    .build();
+        }
+        
         List<String> sentTo = new ArrayList<>();
         List<String> failed = new ArrayList<>();
-        message = """
-                    {
-                      "title": "Test Notification Java",
-                      "body": "This is a test notification sent from the Web Push API. Java",
-                      "icon": "/img/logo.png"
-                    }
-                    """;
 
         try {
-
+            String messageJson = """
+                                 {
+                                    "title":    "%s",
+                                    "body":     "%s",
+                                    "icon":     "%s"
+                                 }
+                                 """.formatted(payload.title, payload.body, payload.icon);
+            
+            
             for (PushSubscription sub : PushStorage.getAll()) {
                 try {
                     Notification notification = new Notification(
                             sub.getEndpoint(),
                             sub.getUserPublicKey(),
                             sub.getAuthAsBytes(),
-                            message.getBytes()
+                            messageJson.getBytes()
                     );
 
                     pushService.send(notification);
                     sentTo.add(sub.getEndpoint());
+                    
                 } catch (Exception e) {
                     failed.add(sub.getEndpoint());
-                    e.printStackTrace();
                 }
             }
 
-            Map<String, List> result = new HashMap<>();
-            result.put("sent", sentTo);
-            result.put("failed", failed);
-
-            return Response.ok(result).build();
-
+            return Response.ok(Map.of("sent", sentTo, "failed", failed))
+                    .build();
+            
         } catch (Exception e) {
-            e.printStackTrace();
             return Response.serverError()
                     .entity(Map.of("error", e.getMessage()))
                     .build();
