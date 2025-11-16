@@ -20,14 +20,17 @@ public class SensorSyncService {
     public void processSensor(JsonObject json) {
         String name = json.getString("name", "");
         String collection = json.getString("data_collection", "");
+        int ootype_id = json.getInt("ootype_id", 0);
+        
         // only mobile sensors
-        if(!name.matches("^SENSORpi m\\d+.*")) {
+        if(ootype_id != 3) {
             return;
         }
         // check whether group already exists
         if (groupExists(name, collection)) {
             System.out.println("WebPush - Group already registered in gamification.groups");
         } else {
+            //create gamification.groups entry
             Map<String, Object> groupPayload = new HashMap<>();
             groupPayload.put("name", name);
             groupPayload.put("data_table", collection);
@@ -35,6 +38,8 @@ public class SensorSyncService {
             String groupURL = smartDataBaseURL + "groups" + STORAGE_GAMIFICATION;
             HttpService.post(groupURL, groupPayload);
         }
+        
+        //edit SmartDataAirquality_config.properties
         try {
             PropertiesEditor.addMirroringEvent(collection, name);
         } catch (IOException ex) {
@@ -44,6 +49,7 @@ public class SensorSyncService {
         System.out.println("WebPush -- tbl_observedobject synchronized");
     }
 
+    
     private boolean groupExists(String name, String collection) {
         String targetURL = smartDataBaseURL + "groups" + STORAGE_GAMIFICATION;
         try {

@@ -1,7 +1,9 @@
-package de.smart.jpatemplate.initialisation;
+package de.smart.jpatemplate.startup;
 
 import de.smart.jpatemplate.data.SimpleResponse;
 import de.smart.jpatemplate.service.SensorSyncService;
+import static de.smart.jpatemplate.rest.ManagementResource.smartDataBaseURL;
+import static de.smart.jpatemplate.rest.ManagementResource.STORAGE_SMARTMONITORING;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -10,19 +12,12 @@ import jakarta.json.JsonReader;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
-
 import java.io.StringReader;
-import java.net.http.HttpClient;
-
-import static de.smart.jpatemplate.rest.ManagementResource.smartDataBaseURL;
-import static de.smart.jpatemplate.rest.ManagementResource.STORAGE_SMARTMONITORING;
 import de.smart.jpatemplate.service.HttpService;
 
 
 @WebListener
 public class AppStartupListener implements ServletContextListener {
-
-    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {

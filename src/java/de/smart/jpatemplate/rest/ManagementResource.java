@@ -64,7 +64,7 @@ public class ManagementResource {
             SensorSyncService service = new SensorSyncService();
             service.processSensor(json);
         } catch (Exception e) {
-            System.err.println("JSON-Parsing Fehler: " + e.getMessage());
+            System.err.println("WebPush - observedobject-webhook: JSON-Parsing Fehler: " + e.getMessage());
         }
         return Response.ok().build();
     }
