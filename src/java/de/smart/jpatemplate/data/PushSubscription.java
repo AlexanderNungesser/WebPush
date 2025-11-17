@@ -18,48 +18,44 @@ import org.bouncycastle.math.ec.ECPoint;
  * A class representing a subscription.
  */
 public class PushSubscription {
+    private String name;
     private String auth;
     private String key;
     private String endpoint;
-
-    public PushSubscription() {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-    }
-
+    
     /**
-     * Decodes the base64 auth string to a byte[]
-     * @return the base64 encoded auth string as a byte[]
-     */
-    public byte[] getAuthAsBytes() {
-        return Base64.getDecoder().decode(getAuth());
-    }
-
-
-    /**
-     * Decodes the base64 public key string to a byte[]
+     * Decodes the base64 key string to a byte[]
+     * @param value - key to 
      * @return the base64 encoded public key string as a byte[]
      */
-    public byte[] getKeyAsBytes() {
-        return Base64.getDecoder().decode(getKey());
+    public static byte[] convertKeyToBytes(String value) {
+        return Base64.getDecoder().decode(value);
     }
-
+    
     /**
      * Returns the base64 encoded public key as a PublicKey object
+     * @param key
      * @return
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeySpecException
      * @throws NoSuchProviderException 
      */
-    public PublicKey getUserPublicKey() throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
+    public static PublicKey getUserPublicKey(String key) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         KeyFactory kf = KeyFactory.getInstance("ECDH", BouncyCastleProvider.PROVIDER_NAME);
         ECNamedCurveParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
-        ECPoint point = ecSpec.getCurve().decodePoint(getKeyAsBytes());
+        ECPoint point = ecSpec.getCurve().decodePoint(convertKeyToBytes(key));
         ECPublicKeySpec pubSpec = new ECPublicKeySpec(point, ecSpec);
 
         return kf.generatePublic(pubSpec);
     }
+
+    public PushSubscription() {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+        this.name = "";
+    }
+
 
     public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
@@ -83,6 +79,14 @@ public class PushSubscription {
 
     public String getKey() {
         return key;
+    }
+    
+    public String getName() {
+        return this.name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
     }
 }
 
