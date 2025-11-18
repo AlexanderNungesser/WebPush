@@ -63,9 +63,10 @@ public class PushResource {
     @DELETE
     @Path("/subscribe/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteSubscription(@PathParam("id") String endpoint) {
+    public Response deleteSubscription(@PathParam("id") String id) {
+        System.out.println("Delete Subscription: " + id);
         try {
-            boolean removed = client.delete(endpoint);
+            boolean removed = client.delete(id);
 
             if (!removed) {
                 return Response.status(Response.Status.NOT_FOUND)

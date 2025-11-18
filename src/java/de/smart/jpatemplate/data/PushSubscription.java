@@ -53,7 +53,7 @@ public class PushSubscription {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             Security.addProvider(new BouncyCastleProvider());
         }
-        this.name = "";
+        this.name = "Test Name";
     }
 
 

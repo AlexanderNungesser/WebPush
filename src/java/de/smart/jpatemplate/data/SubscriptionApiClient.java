@@ -7,6 +7,8 @@ package de.smart.jpatemplate.data;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.*;
 import jakarta.json.Json;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
@@ -21,24 +23,12 @@ public class SubscriptionApiClient {
     private static final String BASE_URL = "http://localhost:8080/SmartDataAirquality/smartdata/records/member/";
     private static final String SCHEMA = "?storage=gamification";
     private final Client client = ClientBuilder.newClient();
+    private final Jsonb builder = JsonbBuilder.create();
 
     public void save(PushSubscription subscription) {
         Response response = null;
         try {
-            String json = """
-                        {
-                          "name": "%s",
-                          "endpoint": "%s",
-                          "key": "%s",
-                          "auth": "%s"
-                        }
-                        """.formatted(
-                                subscription.getName(),
-                                subscription.getEndpoint(),
-                                subscription.getKey(),   // oder encoded value
-                                subscription.getAuth()
-                        );
-
+            String json = builder.toJson(subscription);
             response = client
                     .target(BASE_URL + SCHEMA)
                     .request(MediaType.APPLICATION_JSON)
@@ -53,10 +43,9 @@ public class SubscriptionApiClient {
         }
     }
 
-    public boolean delete(String endpoint) {
+    public boolean delete(String id) {
         Response response = client
-                .target(BASE_URL+SCHEMA)
-                .path(endpoint)
+                .target(BASE_URL+id+SCHEMA)
                 .request()
                 .delete();
 
@@ -75,22 +64,15 @@ public class SubscriptionApiClient {
             throw new RuntimeException("Failed to fetch subscriptions: " + response.readEntity(String.class));
         }
         String rawJson = response.readEntity(String.class);
-
         JsonObject json = Json.createReader(new StringReader(rawJson)).readObject();
         JsonArray array = json.getJsonArray("records");
-        System.out.println(array);
+        
         if (array.isEmpty()) {
-            System.err.println("In if");
             throw new RuntimeException("Subscription not found");
         }
         
-        JsonObject obj = array.get(0).asJsonObject();
-        
-        PushSubscription s = new PushSubscription();
-        s.setEndpoint(obj.getString("endpoint", null));
-        s.setAuth(obj.getString("auth", null));
-        s.setName(obj.getString("name", null));
-        s.setKey(obj.getString("key", null));
+        JsonValue v = array.get(0);
+        PushSubscription s = builder.fromJson(v.toString(), PushSubscription.class);
         
         return s;
     }
@@ -105,20 +87,12 @@ public class SubscriptionApiClient {
             throw new RuntimeException("Failed to fetch subscriptions: " + response.readEntity(String.class));
         }
         String rawJson = response.readEntity(String.class);
-
         JsonObject json = Json.createReader(new StringReader(rawJson)).readObject();
         JsonArray array = json.getJsonArray("records");
 
         List<PushSubscription> subscriptions = new ArrayList<>();
         for (JsonValue v : array) {
-            JsonObject obj = v.asJsonObject();
-
-            PushSubscription s = new PushSubscription();
-            s.setEndpoint(obj.getString("endpoint", null));
-            s.setAuth(obj.getString("auth", null));
-            s.setName(obj.getString("name", null));
-            s.setKey(obj.getString("key", null));
-
+            PushSubscription s = builder.fromJson(v.toString(), PushSubscription.class);
             subscriptions.add(s);
         }
         return subscriptions;
