@@ -28,6 +28,17 @@ public class SubscriptionApiClient {
     public void save(PushSubscription subscription) {
         Response response = null;
         try {
+            response = client
+                    .target(BASE_URL + SCHEMA + "&filter=endpoint,eq," + subscription.getEndpoint())
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+            
+            JsonArray array = getJsonArray(response);
+
+            if (!array.isEmpty()) {
+                return;
+            }
+            
             String json = builder.toJson(subscription);
             response = client
                     .target(BASE_URL + SCHEMA)
@@ -59,11 +70,9 @@ public class SubscriptionApiClient {
                 .get();
         
         if (response.getStatus() >= 400) {
-            throw new RuntimeException("Failed to fetch subscriptions: " + response.readEntity(String.class));
+            throw new RuntimeException("Failed to fetch subscription: " + response.readEntity(String.class));
         }
-        String rawJson = response.readEntity(String.class);
-        JsonObject json = Json.createReader(new StringReader(rawJson)).readObject();
-        JsonArray array = json.getJsonArray("records");
+        JsonArray array = getJsonArray(response);
         
         if (array.isEmpty()) {
             throw new RuntimeException("Subscription not found");
@@ -84,9 +93,8 @@ public class SubscriptionApiClient {
         if (response.getStatus() >= 400) {
             throw new RuntimeException("Failed to fetch subscriptions: " + response.readEntity(String.class));
         }
-        String rawJson = response.readEntity(String.class);
-        JsonObject json = Json.createReader(new StringReader(rawJson)).readObject();
-        JsonArray array = json.getJsonArray("records");
+        
+        JsonArray array = getJsonArray(response);
 
         List<PushSubscription> subscriptions = new ArrayList<>();
         for (JsonValue v : array) {
@@ -94,5 +102,11 @@ public class SubscriptionApiClient {
             subscriptions.add(s);
         }
         return subscriptions;
+    }
+    
+    private JsonArray getJsonArray(Response response){
+        String rawJson = response.readEntity(String.class);
+        JsonObject json = Json.createReader(new StringReader(rawJson)).readObject();
+        return json.getJsonArray("records");
     }
 }
