@@ -45,7 +45,7 @@ public class SubscriptionApiClient {
 
     public boolean delete(String id) {
         Response response = client
-                .target(BASE_URL+id+SCHEMA)
+                .target(BASE_URL + id + SCHEMA)
                 .request()
                 .delete();
 
@@ -53,8 +53,6 @@ public class SubscriptionApiClient {
     }
 
     public PushSubscription getSubscription(String id){
-        String url = BASE_URL+id+SCHEMA;
-        System.err.println(url);
         Response response = client
                 .target(BASE_URL+id+SCHEMA)
                 .request(MediaType.APPLICATION_JSON)
@@ -79,7 +77,7 @@ public class SubscriptionApiClient {
     
     public List<PushSubscription> findAll() {
         Response response = client
-                .target(BASE_URL+SCHEMA)
+                .target(BASE_URL + SCHEMA)
                 .request(MediaType.APPLICATION_JSON)
                 .get();
 

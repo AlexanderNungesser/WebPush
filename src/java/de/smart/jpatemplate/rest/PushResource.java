@@ -13,6 +13,8 @@ import de.smart.jpatemplate.data.PushSubscription;
 import de.smart.jpatemplate.data.SubscriptionApiClient;
 import de.smart.jpatemplate.data.KeyManager;
 import de.smart.jpatemplate.data.MessagePayload;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -21,20 +23,25 @@ import java.util.Map;
 @Path("/push")
 public class PushResource {
 
-    private static KeyPair KEY_PAIR = null;
     private static final SubscriptionApiClient client = new SubscriptionApiClient();
     private static final PushService pushService = new PushService();
+    private final Jsonb builder = JsonbBuilder.create();
+    private KeyPair keyPair;
 
+    private synchronized void ensureKeyPair() {
+        if (keyPair == null) {
+            keyPair = KeyManager.getKeyPair();
+            pushService.setKeyPair(keyPair);
+        }
+    }
+    
     @GET
     @Path("/key")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getKey() {
-        if (KEY_PAIR == null) {
-            KEY_PAIR = KeyManager.getKeyPair();
-            pushService.setKeyPair(KEY_PAIR);
-        }
+        ensureKeyPair();
         
-        return Response.ok(Map.of("key", KeyManager.convertPublicKey(KEY_PAIR))).build();
+        return Response.ok(Map.of("key", KeyManager.convertPublicKey(keyPair))).build();
     }
 
     @POST
@@ -64,7 +71,6 @@ public class PushResource {
     @Path("/subscribe/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteSubscription(@PathParam("id") String id) {
-        System.out.println("Delete Subscription: " + id);
         try {
             boolean removed = client.delete(id);
 
@@ -156,14 +162,7 @@ public class PushResource {
     private void sendToSubscription(PushSubscription sub,  MessagePayload payload, 
                                     List<String> sent, List<String> failed) {
         try {
-            String messageJson = """
-                                 {
-                                    "title":    "%s",
-                                    "body":     "%s",
-                                    "icon":     "%s"
-                                 }
-                                 """.formatted(payload.title, payload.body, payload.icon);
-
+            String messageJson = builder.toJson(payload);
             Notification notification = new Notification(
                     sub.getEndpoint(),
                     PushSubscription.getUserPublicKey(sub.getKey()),

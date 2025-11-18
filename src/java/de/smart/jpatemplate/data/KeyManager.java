@@ -106,7 +106,6 @@ public class KeyManager {
             }
 
             if (privateKey != null && publicKey != null) {
-                System.out.println("Read an existing Keypair!");
                 return new KeyPair(publicKey, privateKey);
             }
 
@@ -123,7 +122,6 @@ public class KeyManager {
     }
     
     private static KeyPair generateKeyPair() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, IOException{
-        System.out.println("Generating a new key Pair!");
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDH");
         keyGen.initialize(new ECGenParameterSpec("secp256r1"));
         KeyPair keyPair = keyGen.generateKeyPair();
