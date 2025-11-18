@@ -109,4 +109,16 @@ public class ManagementResource {
         }
         return Response.ok().build();
     }
+    
+    // ───────────────────────────────────────────────────────────────
+    // SplitData Endpoint
+    // ───────────────────────────────────────────────────────────────
+    @POST
+    @Path("/splitData")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response splitData(String payload) {
+        System.out.println("=== SplitData Triggered ===");
+        System.out.println("Payload: " + payload);
+        return Response.ok().build();
+    }
 }
