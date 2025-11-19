@@ -1,6 +1,7 @@
 package de.smart.jpatemplate.startup;
 
 import de.smart.jpatemplate.data.SimpleResponse;
+import de.smart.jpatemplate.data.TriggerResult;
 import de.smart.jpatemplate.service.SensorSyncService;
 import static de.smart.jpatemplate.rest.ManagementResource.smartDataBaseURL;
 import static de.smart.jpatemplate.rest.ManagementResource.STORAGE_SMARTMONITORING;
@@ -14,6 +15,9 @@ import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 import java.io.StringReader;
 import de.smart.jpatemplate.service.HttpService;
+import de.smart.jpatemplate.service.TriggerService;
+import jakarta.json.JsonArrayBuilder;
+import java.util.List;
 
 
 @WebListener
@@ -45,5 +49,14 @@ public class AppStartupListener implements ServletContextListener {
                 syncService.processSensor(obj);
             }
         }
+        
+//        List<TriggerResult> triggers = TriggerService.getTriggers();
+//        JsonArrayBuilder resp = Json.createArrayBuilder();
+//        for(TriggerResult trigger : triggers){
+//            SimpleResponse r = TriggerService.createJobForTrigger(trigger);
+//            resp.add(Json.createReader(new StringReader(r.readEntity(String.class))).readObject());
+//        }
+//        System.out.println("=== Job Creation for all Triggers ===");
+//        System.out.println(resp.build());
     }
 }

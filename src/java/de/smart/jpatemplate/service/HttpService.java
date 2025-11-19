@@ -5,8 +5,6 @@
 package de.smart.jpatemplate.service;
 
 import de.smart.jpatemplate.data.SimpleResponse;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -21,7 +19,6 @@ import java.net.http.HttpResponse;
 public class HttpService {
 
     private static final HttpClient http = HttpClient.newHttpClient();
-    private static final Jsonb jsonb = JsonbBuilder.create();
 
     // ───────────────────────────────────────────────────────────────
     // GET
@@ -47,14 +44,13 @@ public class HttpService {
     // ───────────────────────────────────────────────────────────────
     // POST
     // ───────────────────────────────────────────────────────────────
-    public static SimpleResponse post(String url, Object body) {
+    public static SimpleResponse post(String url, String body) {
         try {
-            String jsonBody = jsonb.toJson(body);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
             HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
@@ -63,6 +59,27 @@ public class HttpService {
 
         } catch (Exception e) {
             String err = "{\"error\":\"POST request failed: " + e.getMessage() + "\"}";
+            return new SimpleResponse(500, err);
+        }
+    }
+    
+    // ───────────────────────────────────────────────────────────────
+    // DELETE
+    // ───────────────────────────────────────────────────────────────
+    public static SimpleResponse delete(String url) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .DELETE()
+                    .build();
+
+            HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
+
+            return new SimpleResponse(resp.statusCode(), resp.body());
+
+        } catch (Exception e) {
+            String err = "{\"error\":\"DELETE request failed: " + e.getMessage() + "\"}";
             return new SimpleResponse(500, err);
         }
     }

@@ -39,6 +39,26 @@ public class Configuration {
             //Logger.addMessage(msg);
         }
     }
+    
+        /**
+     * Load configuration for known module name
+     * 
+     * @param moduleName Name of the module to load configuration for
+     */
+    public Configuration(String moduleName) {
+        this.moduleName = moduleName;
+        this.prop = new Properties();
+        this.fileName = this.moduleName + "_config.properties";
+        try (InputStream inputStream = new FileInputStream(fileName)) {
+            // Loading the properties.
+            this.prop.load(inputStream);
+            this.proploaded = true;
+        } catch (IOException ex) {
+            // Do not report every not found
+//                Message msg = new Message("Configuration", MessageLevel.ERROR, "Could not load properties file >" + fileName + "<: " + ex.getLocalizedMessage());
+//                Logger.addMessage(msg);
+        }
+    }
 
     public String getModuleName() {
         return moduleName;

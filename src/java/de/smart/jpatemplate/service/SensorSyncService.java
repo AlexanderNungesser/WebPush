@@ -31,12 +31,12 @@ public class SensorSyncService {
             System.out.println("WebPush - Group already registered in gamification.groups");
         } else {
             //create gamification.groups entry
-            Map<String, Object> groupPayload = new HashMap<>();
+            Map<String, String> groupPayload = new HashMap<>();
             groupPayload.put("name", name);
             groupPayload.put("data_table", collection);
 
             String groupURL = smartDataBaseURL + "groups" + STORAGE_GAMIFICATION;
-            HttpService.post(groupURL, groupPayload);
+            HttpService.post(groupURL, groupPayload.toString());
         }
         
         //edit SmartDataAirquality_config.properties
