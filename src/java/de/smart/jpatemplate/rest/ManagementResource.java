@@ -140,8 +140,7 @@ public class ManagementResource {
                     .add("trigger_id", triggerId != null ? triggerId : "")
                     .build();
 
-            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "notifications", notification);        
-            //SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "notifications" + STORAGE_GAMIFICATION, notification);
+            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "notifications" + STORAGE_GAMIFICATION, notification);        
 
             String respbody = resp.readEntity(String.class).trim();
             int notificationId = Integer.parseInt(respbody);
@@ -156,8 +155,7 @@ public class ManagementResource {
                             .add("action_id", actionId)
                             .build();
                 
-                    HttpService.post(ManagementResource.smartDataBaseURL + "notification_actions", notifAction);
-                    //HttpService.post(ManagementResource.smartDataBaseURL + "notification_actions" + STORAGE_GAMIFICATION, notifAction);
+                    HttpService.post(ManagementResource.smartDataBaseURL + "notification_actions" + STORAGE_GAMIFICATION, notifAction);
                 }
             }
 
@@ -202,8 +200,7 @@ public class ManagementResource {
             
             System.out.println("FINAL TRIGGER JSON = " + trigger);
 
-            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "triggers", trigger);
-            //SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "triggers" + STORAGE_GAMIFICATION, trigger);
+            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "triggers" + STORAGE_GAMIFICATION, trigger);
 
             String respbody = resp.readEntity(String.class).trim();
             int triggerId = Integer.parseInt(respbody);
@@ -222,7 +219,7 @@ public class ManagementResource {
                             .add("threshold", threshold)
                             .build();
                     
-                    HttpService.post(ManagementResource.smartDataBaseURL + "condition", condition);
+                    HttpService.post(ManagementResource.smartDataBaseURL + "condition" + STORAGE_GAMIFICATION, condition);
 
                     System.out.println("Linking Condition ID " + Integer.parseInt(index) + " to Trigger ID " + triggerId);
                 
@@ -231,8 +228,7 @@ public class ManagementResource {
                             .add("condition_id", Integer.parseInt(index))
                             .build();
                 
-                    HttpService.post(ManagementResource.smartDataBaseURL + "trigger_conditions", triggerCond);
-                    //HttpService.post(ManagementResource.smartDataBaseURL + "trigger_conditions" + STORAGE_GAMIFICATION, triggerCond);
+                    HttpService.post(ManagementResource.smartDataBaseURL + "trigger_conditions" + STORAGE_GAMIFICATION, triggerCond);
                 }
             }
 
