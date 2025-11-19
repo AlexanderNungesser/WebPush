@@ -2,6 +2,7 @@ package de.smart.jpatemplate.startup;
 
 import de.smart.jpatemplate.data.SimpleResponse;
 import de.smart.jpatemplate.data.TriggerResult;
+import de.smart.jpatemplate.data.WebhookAction;
 import de.smart.jpatemplate.service.SensorSyncService;
 import static de.smart.jpatemplate.rest.ManagementResource.smartDataBaseURL;
 import static de.smart.jpatemplate.rest.ManagementResource.STORAGE_SMARTMONITORING;
@@ -15,6 +16,7 @@ import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 import java.io.StringReader;
 import de.smart.jpatemplate.service.HttpService;
+import de.smart.jpatemplate.service.PropertiesWebhookService;
 import de.smart.jpatemplate.service.TriggerService;
 import jakarta.json.JsonArrayBuilder;
 import java.util.List;
@@ -49,7 +51,34 @@ public class AppStartupListener implements ServletContextListener {
                 syncService.processSensor(obj);
             }
         }
-        
+        try {
+            PropertiesWebhookService.addWebhook("tbl_observedobject", 
+                    "SMARTMONITORING", 
+                    WebhookAction.POST, 
+                    "http://localhost:8080/WebPush/smarttemplate/admin/tbl_observecobject_change", 
+                    "RECORDS", 
+                    null, 
+                    "tbl Observe-Objects");
+            
+            PropertiesWebhookService.addWebhook("Triggers", 
+                    "GAMIFICATION", 
+                    WebhookAction.POST, 
+                    "http://localhost:8080/WebPush/smarttemplate/admin/webhook", 
+                    "RECORDS", 
+                    null, 
+                    "React on new Triggers");
+            
+            PropertiesWebhookService.addWebhook("Triggers", 
+                    "GAMIFICATION", 
+                    WebhookAction.DELETE, 
+                    "http://localhost:8080/WebPush/smarttemplate/admin/webhook", 
+                    "RECORDS", 
+                    null, 
+                    "React on deleted Triggers");
+            
+        } catch (Exception e){
+            
+        }
 //        List<TriggerResult> triggers = TriggerService.getTriggers();
 //        JsonArrayBuilder resp = Json.createArrayBuilder();
 //        for(TriggerResult trigger : triggers){

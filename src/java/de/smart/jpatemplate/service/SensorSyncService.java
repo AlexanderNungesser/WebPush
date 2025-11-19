@@ -1,7 +1,7 @@
 package de.smart.jpatemplate.service;
 
-import de.smart.jpatemplate.data.PropertiesEditor;
 import de.smart.jpatemplate.data.SimpleResponse;
+import de.smart.jpatemplate.data.WebhookAction;
 import static de.smart.jpatemplate.rest.ManagementResource.STORAGE_GAMIFICATION;
 import static de.smart.jpatemplate.rest.ManagementResource.smartDataBaseURL;
 
@@ -41,7 +41,15 @@ public class SensorSyncService {
         
         //edit SmartDataAirquality_config.properties
         try {
-            PropertiesEditor.addMirroringEvent(collection, name);
+/*            PropertiesWebhookService.addWebhook(collection, 
+                    null, 
+                    WebhookAction.POST, 
+                    "http://localhost:8080/WebPush/smarttemplate/admin/webhook", 
+                    null, 
+                    null, 
+                    name);
+  */          PropertiesWebhookService.addMirroringEvent(collection, name);
+            
         } catch (IOException ex) {
             System.err.println("WebPush - Error writing mirroring event: " + ex.getMessage());
             return;

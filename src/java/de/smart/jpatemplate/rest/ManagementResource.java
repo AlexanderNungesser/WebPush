@@ -140,7 +140,7 @@ public class ManagementResource {
                     .add("trigger_id", triggerId != null ? triggerId : "")
                     .build();
 
-            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "notifications" + STORAGE_GAMIFICATION, notification);        
+            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "notifications" + STORAGE_GAMIFICATION, notification.toString());        
 
             String respbody = resp.readEntity(String.class).trim();
             int notificationId = Integer.parseInt(respbody);
@@ -155,7 +155,7 @@ public class ManagementResource {
                             .add("action_id", actionId)
                             .build();
                 
-                    HttpService.post(ManagementResource.smartDataBaseURL + "notification_actions" + STORAGE_GAMIFICATION, notifAction);
+                    HttpService.post(ManagementResource.smartDataBaseURL + "notification_actions" + STORAGE_GAMIFICATION, notifAction.toString());
                 }
             }
 
@@ -200,7 +200,7 @@ public class ManagementResource {
             
             System.out.println("FINAL TRIGGER JSON = " + trigger);
 
-            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "triggers" + STORAGE_GAMIFICATION, trigger);
+            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "triggers" + STORAGE_GAMIFICATION, trigger.toString());
 
             String respbody = resp.readEntity(String.class).trim();
             int triggerId = Integer.parseInt(respbody);
@@ -209,7 +209,7 @@ public class ManagementResource {
                 if (key.startsWith("data_field_")) {
                     String index = key.substring("data_field_".length());
                     String dataField = json.getString(key);
-                    String operator = json.containsKey("operator_" + index) ? json.getString("operator_" + index) : "=";
+                    String operator = json.containsKey("operator_" + index) ? json.getString("operator_" + index) : "==";
                     BigDecimal threshold = new BigDecimal(json.getString("threshold_" + index, "0"));
                     
                     JsonObject condition = Json .createObjectBuilder()
@@ -219,7 +219,7 @@ public class ManagementResource {
                             .add("threshold", threshold)
                             .build();
                     
-                    HttpService.post(ManagementResource.smartDataBaseURL + "condition" + STORAGE_GAMIFICATION, condition);
+                    HttpService.post(ManagementResource.smartDataBaseURL + "condition" + STORAGE_GAMIFICATION, condition.toString());
 
                     System.out.println("Linking Condition ID " + Integer.parseInt(index) + " to Trigger ID " + triggerId);
                 
@@ -228,7 +228,7 @@ public class ManagementResource {
                             .add("condition_id", Integer.parseInt(index))
                             .build();
                 
-                    HttpService.post(ManagementResource.smartDataBaseURL + "trigger_conditions" + STORAGE_GAMIFICATION, triggerCond);
+                    HttpService.post(ManagementResource.smartDataBaseURL + "trigger_conditions" + STORAGE_GAMIFICATION, triggerCond.toString());
                 }
             }
 
