@@ -94,6 +94,7 @@ public class AppStartupListener implements ServletContextListener {
         System.out.println("=== Job Creation for all Triggers ===");
         
         for(TriggerResult trigger : triggers){
+            if (TriggerService.jobAlreadyExists(trigger)) continue;
             SimpleResponse r = TriggerService.createJobForTrigger(trigger);
             resp.add(Json.createReader(new StringReader(r.readEntity(String.class))).readObject());
         }
