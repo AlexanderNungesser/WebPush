@@ -13,8 +13,6 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import java.io.StringReader;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -35,75 +33,26 @@ public class TriggerService {
     public static String STORAGE_SMARTMONITORING = "?storage=smartmonitoring";
     private static final String DATAJOBS = "datajobs";
     private static final String DATAJOBS_PARAMS = "datajobs_params";
-    private static final String TRIGGERS = "triggers";
     private static final DateTimeFormatter fmt = new DateTimeFormatterBuilder()
-            .appendPattern("yyyy-MM-dd HH:mm:ss")
+            .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
             .optionalStart()
             .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
             .optionalEnd()
             .toFormatter();
-
-    public static boolean triggerAlreadyExists(JsonObject payload) {
-
-        String cron = (payload.getJsonString("cron") != null)
-                ? payload.getString("cron")
-                : null;
-
-        String timestamp = (payload.getJsonString("time_once") != null)
-                ? payload.getString("time_once")
-                : null;
-
-        String targetURL = SMARTDATA_BASE_URL
-                + TRIGGERS
-                + STORAGE_GAMIFICATION
-                + "&filter=" + ((cron == null) ? "time_once" : "cron") + ",eq,"
-                + ((cron == null) ? timestamp : cron);
-
-        SimpleResponse resp = HttpService.get(targetURL);
-        String jsonText = resp.readEntity(String.class);
-        JsonObject root;
-        try (JsonReader reader = Json.createReader(new StringReader(jsonText))) {
-            root = reader.readObject();
-        }
-        JsonArray records = root.getJsonArray("records");
-        return records == null || !records.isEmpty();
-    }
     
-    public static SimpleResponse deleteTrigger(JsonObject payload){
-        
-        int triggerId = payload.getInt("id");
-        
-        String targetURL = SMARTDATA_BASE_URL
-                + TRIGGERS
-                + "/" + triggerId
-                + STORAGE_SMARTMONITORING;
-        
-        return HttpService.delete(targetURL);
-    }
-
-    public static TriggerResult getTrigger(String idString, JsonObject payload) {
-
-        int triggerId = payload.getInt(idString);
+    public static TriggerResult getTrigger(int triggerId, JsonObject payload) {
 
         String cron = (payload.getJsonString("cron") != null)
                 ? payload.getString("cron")
                 : null;
 
-        String lastTriggeredAt = (payload.getJsonString("last_triggered_at") != null)
-                ? payload.getString("last_triggered_at")
-                : null;
-
-        String timestamp = (payload.getJsonString("time_once") != null)
+        String timeOnce = (payload.getJsonString("time_once") != null)
                 ? payload.getString("time_once")
                 : null;
-
-        String timeStr = (lastTriggeredAt == null)
-                ? timestamp
-                : lastTriggeredAt;
-
-        ZonedDateTime baseTime = (timeStr == null)
+        
+        ZonedDateTime baseTime = (timeOnce == null)
                 ? ZonedDateTime.now()
-                : ZonedDateTime.of(LocalDateTime.parse(timeStr, fmt), ZoneId.systemDefault());
+                : ZonedDateTime.of(LocalDateTime.parse(timeOnce, fmt), ZoneId.systemDefault());
 
         TriggerResult tr;
 
@@ -140,7 +89,7 @@ public class TriggerService {
         List<TriggerResult> triggers = new ArrayList<>();
 
         for (JsonObject st : scheduledtriggers.getValuesAs(JsonObject.class)) {
-            triggers.add(getTrigger("trigger_id", st));
+            triggers.add(getTrigger(st.getInt("trigger_id"), st));
         }
 
         List<TriggerResult> sortedTriggers = triggers.stream()
@@ -188,6 +137,11 @@ public class TriggerService {
         if (resp.getStatus() != 201) {
             return new SimpleResponse(resp.getStatus(), resp.readEntity(String.class));
         }
+        
+        
+        
+        
+        
         return new SimpleResponse(resp.getStatus(),
                 Json.createObjectBuilder()
                         .add(DATAJOBS, Json.createReader(new StringReader(jobBody)).readObject())

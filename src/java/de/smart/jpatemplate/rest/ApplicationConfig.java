@@ -35,7 +35,6 @@ public class ApplicationConfig extends Application {
         resources.add(de.smart.jpatemplate.rest.PushResource.class);
         resources.add(de.smart.jpatemplate.rest.SystemResource.class);
         resources.add(de.smart.jpatemplate.rest.TemplateResource.class);
-        resources.add(de.smart.jpatemplate.rest.TriggerResource.class);
         resources.add(de.smart.jpatemplate.rest.WebhookResource.class);
     }
     

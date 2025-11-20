@@ -1,9 +1,11 @@
 package de.smart.jpatemplate.rest;
 
 import de.smart.jpatemplate.data.SimpleResponse;
+import de.smart.jpatemplate.data.TriggerResult;
 import de.smart.jpatemplate.service.HttpService;
 import de.smart.jpatemplate.service.NotificationService;
 import de.smart.jpatemplate.service.SensorSyncService;
+import de.smart.jpatemplate.service.TriggerService;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -131,6 +133,8 @@ public class ManagementResource {
             JsonObject json = reader.readObject();
             System.out.println("PARSED JSON = " + json);
 
+            // TODO: SCHMEISS `schedule_type` RAUS
+            
             String scheduleType = json.getString("schedule_type", "trigger");
             String scheduleCron = json.getString("schedule_cron", null);
             String scheduleTimestamp = json.getString("schedule_timestamp", null);
@@ -182,6 +186,10 @@ public class ManagementResource {
                     HttpService.post(SmartDataRecordsApi + "trigger_conditions" + StorageGamification, triggerCond.toString());
                 }
             }
+            
+            TriggerResult tr = TriggerService.getTrigger(triggerId, trigger);
+
+            SimpleResponse res = TriggerService.createJobForTrigger(tr);
 
             return Response.status(resp.getStatus()).entity(resp.readEntity(String.class)).build();
 
