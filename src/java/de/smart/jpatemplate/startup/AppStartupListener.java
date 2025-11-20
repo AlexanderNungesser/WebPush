@@ -1,11 +1,9 @@
 package de.smart.jpatemplate.startup;
 
 import de.smart.jpatemplate.data.SimpleResponse;
-import de.smart.jpatemplate.data.TriggerResult;
 import de.smart.jpatemplate.data.WebhookAction;
 import de.smart.jpatemplate.service.SensorSyncService;
-import static de.smart.jpatemplate.rest.ManagementResource.smartDataBaseURL;
-import static de.smart.jpatemplate.rest.ManagementResource.STORAGE_SMARTMONITORING;
+import static de.smart.jpatemplate.rest.ManagementResource.*;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -17,20 +15,17 @@ import jakarta.servlet.annotation.WebListener;
 import java.io.StringReader;
 import de.smart.jpatemplate.service.HttpService;
 import de.smart.jpatemplate.service.PropertiesWebhookService;
-import de.smart.jpatemplate.service.TriggerService;
-import jakarta.json.JsonArrayBuilder;
-import java.util.List;
 
 
 @WebListener
 public class AppStartupListener implements ServletContextListener {
-
+    
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         System.out.println("=== Initial WebPush - Sync Startup ===");
 
         SensorSyncService syncService = new SensorSyncService();
-        String targetURL = smartDataBaseURL + "tbl_observedobject" + STORAGE_SMARTMONITORING;
+        String targetURL = SmartDataRecordsApi + "tbl_observedobject" + StorageSmartmonitoring;
         SimpleResponse sr = HttpService.get(targetURL);
         
         if(sr.getStatus() != 200) {
@@ -55,7 +50,7 @@ public class AppStartupListener implements ServletContextListener {
             PropertiesWebhookService.addWebhook("tbl_observedobject", 
                     "SMARTMONITORING", 
                     WebhookAction.POST, 
-                    "http://localhost:8080/WebPush/smarttemplate/admin/tbl_observecobject_change", 
+                    WebPushResourceApi + "webhook/" + "tbl_observedobject_change",
                     "RECORDS", 
                     null, 
                     "tbl Observe-Objects");
@@ -63,7 +58,7 @@ public class AppStartupListener implements ServletContextListener {
             PropertiesWebhookService.addWebhook("Triggers", 
                     "GAMIFICATION", 
                     WebhookAction.POST, 
-                    "http://localhost:8080/WebPush/smarttemplate/admin/webhook", 
+                    WebPushResourceApi + "webhook/" + "trigger_post",
                     "RECORDS", 
                     null, 
                     "React on new Triggers");
@@ -71,13 +66,13 @@ public class AppStartupListener implements ServletContextListener {
             PropertiesWebhookService.addWebhook("Triggers", 
                     "GAMIFICATION", 
                     WebhookAction.DELETE, 
-                    "http://localhost:8080/WebPush/smarttemplate/admin/webhook", 
+                    WebPushResourceApi + "webhook/" + "trigger_delete",
                     "RECORDS", 
                     null, 
                     "React on deleted Triggers");
             
         } catch (Exception e){
-            
+            //do nothing
         }
 //        List<TriggerResult> triggers = TriggerService.getTriggers();
 //        JsonArrayBuilder resp = Json.createArrayBuilder();

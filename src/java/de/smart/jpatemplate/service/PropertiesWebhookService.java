@@ -1,9 +1,9 @@
 package de.smart.jpatemplate.service;
 
 import de.smart.jpatemplate.data.WebhookAction;
+import de.smart.jpatemplate.rest.ManagementResource;
 import java.io.*;
 import java.nio.file.*;
-import java.util.Properties;
 
 public class PropertiesWebhookService {
 
@@ -16,10 +16,10 @@ public class PropertiesWebhookService {
             String webhookUrl,
             String api,
             String propertiesName,
-            String commentTitle      // z.B. "Mirroring of: XYZ"
+            String commentTitle      // z.B. "Mirroring of: xyz"
     ) throws IOException {
 
-        // Standard-Konfiguration
+        // default-configuration
         if (propertiesName == null || propertiesName.isBlank())
             propertiesName = "SmartDataAirquality_config";
 
@@ -29,7 +29,7 @@ public class PropertiesWebhookService {
         if (schema == null || schema.isBlank()) schema = "SMARTMONITORING";
         if (action == null) action = WebhookAction.POST;
 
-        // Key generieren
+        // Key generation
         String key =
                 api + "_"
                 + table.toUpperCase().replace(" ", "") + "_"
@@ -39,16 +39,12 @@ public class PropertiesWebhookService {
         if (!Files.exists(file)) {
             throw new FileNotFoundException("Config-file '" + propertiesName + "' not found");
         }
-
-        // Datei komplett einlesen
         String original = Files.readString(file);
-
-        // Wenn Key bereits existiert → abbrechen
+        
         if (original.contains(key + "=")) {
             return;
         }
-
-        // Kommentar erstellen (optional)
+        
         StringBuilder block = new StringBuilder();
         block.append("\n");
 
@@ -57,8 +53,7 @@ public class PropertiesWebhookService {
         }
 
         block.append(key).append("=").append(webhookUrl).append("\n");
-
-        // Anhängen ohne Datei zu zerstören
+        
         Files.writeString(
                 file,
                 original + block,
@@ -66,15 +61,13 @@ public class PropertiesWebhookService {
                 StandardOpenOption.TRUNCATE_EXISTING
         );
     }
-
-
-    // Convenience-Methode für dein Mirroring (delegiert nur!)
+    
     public static void addMirroringEvent(String sensorTable, String sensorName) throws IOException {
         addWebhook(
                 sensorTable,
                 "SMARTMONITORING",
                 WebhookAction.POST,
-                "http://localhost:8080/WebPush/smarttemplate/admin/webhook",
+                ManagementResource.WebPushResourceApi + "webhook/sensor_push/" + sensorTable,
                 "RECORDS",
                 "SmartDataAirquality_config",
                 "Mirroring of: " + sensorName

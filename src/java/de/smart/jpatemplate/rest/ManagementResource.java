@@ -26,11 +26,10 @@ import java.math.BigDecimal;
 
 @Path("/admin")
 public class ManagementResource {
-
-    public static String smartDataBaseURL = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
-    public static String STORAGE_GAMIFICATION = "?storage=gamification";
-    public static String STORAGE_SMARTMONITORING = "?storage=smartmonitoring";
-
+    public static final String SmartDataRecordsApi = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
+    public static final String WebPushResourceApi = "http://localhost:8080/WebPush/webpush/";
+    public static final String StorageSmartmonitoring = "?storage=smartmonitoring";
+    public static final String StorageGamification = "?storage=gamification"; 
     
     
     
@@ -65,54 +64,6 @@ public class ManagementResource {
     
     
     // ───────────────────────────────────────────────────────────────
-    // Webhook Mirror Endpoints
-    // ───────────────────────────────────────────────────────────────
-    @POST
-    @Path("/webhook")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response mirror_post(String payload) {
-        System.out.println("=== Webhook Triggered (POST) ===");
-        System.out.println("Payload: " + payload);
-        return Response.ok().build();
-    }
-
-    @PUT
-    @Path("/webhook")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response mirror_put(String payload) {
-        System.out.println("=== Webhook Triggered (PUT) ===");
-        System.out.println("Payload: " + payload);
-        return Response.ok().build();
-    }
-
-    @DELETE
-    @Path("/webhook")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response mirror_delete(String payload) {
-        System.out.println("=== Webhook Triggered (DELETE) ===");
-        System.out.println("Payload: " + payload);
-        return Response.ok().build();
-    }
-
-
-    // ───────────────────────────────────────────────────────────────
-    // Webhook: tbl_observedobject change
-    // ───────────────────────────────────────────────────────────────
-    @POST
-    @Path("/tbl_observecobject_change")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response handleObjectChange(String payload) {
-        try (JsonReader reader = Json.createReader(new StringReader(payload))) {
-            JsonObject json = reader.readObject();
-            SensorSyncService service = new SensorSyncService();
-            service.processSensor(json);
-        } catch (Exception e) {
-            System.err.println("WebPush - observedobject-webhook: JSON-Parsing Fehler: " + e.getMessage());
-        }
-        return Response.ok().build();
-    }
-    
-    // ───────────────────────────────────────────────────────────────
     // Create Notification Endpoint
     // ───────────────────────────────────────────────────────────────
     @POST
@@ -140,7 +91,7 @@ public class ManagementResource {
                     .add("trigger_id", triggerId != null ? triggerId : "")
                     .build();
 
-            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "notifications" + STORAGE_GAMIFICATION, notification.toString());        
+            SimpleResponse resp = HttpService.post(SmartDataRecordsApi + "notifications" + StorageGamification, notification.toString());        
 
             String respbody = resp.readEntity(String.class).trim();
             int notificationId = Integer.parseInt(respbody);
@@ -155,7 +106,7 @@ public class ManagementResource {
                             .add("action_id", actionId)
                             .build();
                 
-                    HttpService.post(ManagementResource.smartDataBaseURL + "notification_actions" + STORAGE_GAMIFICATION, notifAction.toString());
+                    HttpService.post(SmartDataRecordsApi + "notification_actions" + StorageGamification, notifAction.toString());
                 }
             }
 
@@ -200,7 +151,7 @@ public class ManagementResource {
             
             System.out.println("FINAL TRIGGER JSON = " + trigger);
 
-            SimpleResponse resp = HttpService.post(ManagementResource.smartDataBaseURL + "triggers" + STORAGE_GAMIFICATION, trigger.toString());
+            SimpleResponse resp = HttpService.post(SmartDataRecordsApi + "triggers" + StorageGamification, trigger.toString());
 
             String respbody = resp.readEntity(String.class).trim();
             int triggerId = Integer.parseInt(respbody);
@@ -219,7 +170,7 @@ public class ManagementResource {
                             .add("threshold", threshold)
                             .build();
                     
-                    HttpService.post(ManagementResource.smartDataBaseURL + "condition" + STORAGE_GAMIFICATION, condition.toString());
+                    HttpService.post(SmartDataRecordsApi + "condition" + StorageGamification, condition.toString());
 
                     System.out.println("Linking Condition ID " + Integer.parseInt(index) + " to Trigger ID " + triggerId);
                 
@@ -228,7 +179,7 @@ public class ManagementResource {
                             .add("condition_id", Integer.parseInt(index))
                             .build();
                 
-                    HttpService.post(ManagementResource.smartDataBaseURL + "trigger_conditions" + STORAGE_GAMIFICATION, triggerCond.toString());
+                    HttpService.post(SmartDataRecordsApi + "trigger_conditions" + StorageGamification, triggerCond.toString());
                 }
             }
 
