@@ -52,7 +52,6 @@ public class ManagementResource {
         }
     }
     
-    
     // ───────────────────────────────────────────────────────────────
     // Create Notification Endpoint
     // ───────────────────────────────────────────────────────────────
@@ -122,40 +121,33 @@ public class ManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createTrigger(String payload) {
         try (JsonReader reader = Json.createReader(new StringReader(payload))) {
-            //System.out.println("RAW PAYLOAD = " + payload);
-
             JsonObject json = reader.readObject();
-            //System.out.println("PARSED JSON = " + json);
 
-            // TODO: SCHMEISS `schedule_type` RAUS
-            
-            String scheduleType = json.getString("schedule_type", "trigger");
             String scheduleCron = json.getString("schedule_cron", null);
             String scheduleTimestamp = json.getString("schedule_timestamp", null);
 
             String description = json.getString("description", "");
 
             JsonObjectBuilder triggerBuilder = Json.createObjectBuilder()
-                    .add("description", description)
-                    .add("schedule_type", scheduleType);
+                    .add("description", description);
 
-            if ("recurring".equalsIgnoreCase(scheduleType)) {
-                triggerBuilder.add("cron", scheduleCron != null ? scheduleCron : "");
-            } else if ("once".equalsIgnoreCase(scheduleType)) {
-                triggerBuilder.add("time_once", scheduleTimestamp != null ? scheduleTimestamp : "");
+            if (scheduleCron != null && !scheduleCron.isBlank()) {
+                triggerBuilder.add("cron", scheduleCron);
+            }
+
+            if (scheduleTimestamp != null && !scheduleTimestamp.isBlank()) {
+                triggerBuilder.add("time_once", scheduleTimestamp);
             }
 
             JsonObject trigger = triggerBuilder.build();
             
-            //System.out.println("FINAL TRIGGER JSON = " + trigger);
-            
             final String triggerPostUrl = HttpService.SmartDataRecordsApi
                     + "triggers"
                     + HttpService.StorageGamification;
-            SimpleResponse resp = HttpService.post(triggerPostUrl, trigger);
+            SimpleResponse triggerresp = HttpService.post(triggerPostUrl, trigger);
 
-            String respbody = resp.readEntity(String.class).trim();
-            int triggerId = Integer.parseInt(respbody);
+            String trigrespbody = triggerresp.readEntity(String.class).trim();
+            int triggerId = Integer.parseInt(trigrespbody);
 
             for (String key : json.keySet()) {
                 if (key.startsWith("data_field_")) {
@@ -165,22 +157,24 @@ public class ManagementResource {
                     BigDecimal threshold = new BigDecimal(json.getString("threshold_" + index, "0"));
                     
                     JsonObject condition = Json .createObjectBuilder()
-                            .add("id", Integer.parseInt(index))
                             .add("data_field", dataField)
                             .add("operator", operator)
                             .add("threshold", threshold)
                             .build();
                     
                     final String conditionPostUrl = HttpService.SmartDataRecordsApi
-                            + "condition"
+                            + "conditions"
                             + HttpService.StorageGamification;
-                    HttpService.post(conditionPostUrl, condition);
+                    SimpleResponse conditionresp = HttpService.post(conditionPostUrl, condition);
 
-                    System.out.println("Linking Condition ID " + Integer.parseInt(index) + " to Trigger ID " + triggerId);
+                    String condrespbody = conditionresp.readEntity(String.class).trim();
+                    int conditionId = Integer.parseInt(condrespbody);
+
+                    System.out.println("Linking Condition ID " + conditionId + " to Trigger ID " + triggerId);
                 
                     JsonObject triggerCond = Json.createObjectBuilder()
                             .add("trigger_id", triggerId)
-                            .add("condition_id", Integer.parseInt(index))
+                            .add("condition_id", conditionId)
                             .build();
                 
                     final String triggerConditionsPostUrl = HttpService.SmartDataRecordsApi
@@ -194,7 +188,7 @@ public class ManagementResource {
 
             SimpleResponse res = TriggerService.createJobForTrigger(tr);
 
-            return Response.status(resp.getStatus()).entity(resp.readEntity(String.class)).build();
+            return Response.status(triggerresp.getStatus()).entity(triggerresp.readEntity(String.class)).build();
 
         } catch (Exception e) {
             return Response.serverError().entity("{\"error\":\"" + e.getMessage() + "\"}").build();
