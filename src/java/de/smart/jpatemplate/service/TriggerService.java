@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 public class TriggerService {
 
     public static String SMARTDATA_BASE_URL = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
+    public static String SMARTDATA_STARTJOB_URL = "http://localhost:8080/SmartDataJobs/smartdatajobs/jobexecution/start?smartdataurl=/SmartDataAirquality";
     public static String STORAGE_GAMIFICATION = "?storage=gamification";
     public static String STORAGE_SMARTMONITORING = "?storage=smartmonitoring";
     private static final String DATAJOBS = "datajobs";
@@ -121,7 +122,7 @@ public class TriggerService {
             return null;
         }
         String jsonText = resp.readEntity(String.class);
-
+        int datajobId = Integer.parseInt(jsonText);
         targetURL = SMARTDATA_BASE_URL
                 + DATAJOBS_PARAMS
                 + STORAGE_SMARTMONITORING;
@@ -129,7 +130,7 @@ public class TriggerService {
         String paramsBody = Json.createObjectBuilder()
                 .add("key", "trigger_id")
                 .add("value", tr.id())
-                .add("datajob_id", Integer.parseInt(jsonText))
+                .add("datajob_id", datajobId)
                 .add("type", "int")
                 .build().toString();
 
@@ -138,9 +139,15 @@ public class TriggerService {
             return new SimpleResponse(resp.getStatus(), resp.readEntity(String.class));
         }
         
+        targetURL = SMARTDATA_STARTJOB_URL
+                + STORAGE_SMARTMONITORING
+                + "&collection=" + DATAJOBS
+                + "&id=" + datajobId;
         
-        
-        
+        resp = HttpService.get(targetURL);
+        if (resp.getStatus() != 200) {
+            return new SimpleResponse(resp.getStatus(), resp.readEntity(String.class));
+        }
         
         return new SimpleResponse(resp.getStatus(),
                 Json.createObjectBuilder()
