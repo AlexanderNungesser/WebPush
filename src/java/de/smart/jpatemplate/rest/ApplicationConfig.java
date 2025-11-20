@@ -7,7 +7,7 @@ import jakarta.ws.rs.core.Application;
  * Automatisch Erstellte Klasse durch Netbeans, verwaltet REST Klassen
  * @author Nils Leunig, dstarke
  */
-@jakarta.ws.rs.ApplicationPath("smarttemplate")
+@jakarta.ws.rs.ApplicationPath("webpush")
 public class ApplicationConfig extends Application {
 
     @Override
@@ -36,6 +36,7 @@ public class ApplicationConfig extends Application {
         resources.add(de.smart.jpatemplate.rest.SystemResource.class);
         resources.add(de.smart.jpatemplate.rest.TemplateResource.class);
         resources.add(de.smart.jpatemplate.rest.TriggerResource.class);
+        resources.add(de.smart.jpatemplate.rest.WebhookResource.class);
     }
     
 }

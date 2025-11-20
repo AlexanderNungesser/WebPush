@@ -4,9 +4,7 @@
  */
 package de.smart.jpatemplate.service;
 
-import static de.smart.jpatemplate.rest.ManagementResource.smartDataBaseURL;
-import static de.smart.jpatemplate.rest.ManagementResource.STORAGE_GAMIFICATION;
-
+import static de.smart.jpatemplate.rest.ManagementResource.*;
 
 import de.smart.jpatemplate.data.SimpleResponse;
 import jakarta.json.Json;
@@ -14,7 +12,6 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
-import jakarta.ws.rs.core.Response;
 import java.io.StringReader;
 
 /**
@@ -25,10 +22,11 @@ public class NotificationService {
     
     //return random fitting notification
     public JsonObject pickRandomNotification(int triggerId) {
-        String targetURL = smartDataBaseURL + "notifications" 
-                    + STORAGE_GAMIFICATION 
-                    + "&filter=trigger_id,eq," 
-                    + triggerId;
+        String targetURL = SmartDataRecordsApi 
+                + "notifications" 
+                + StorageGamification
+                + "&filter=trigger_id,eq,"
+                + triggerId;
             SimpleResponse resp = HttpService.get(targetURL);
             if(resp.getStatus() != 200) {
                 return null;
@@ -66,12 +64,13 @@ public class NotificationService {
     
     //load all Member to a specific group (based on DB-View)
     private JsonArray loadMembers(int groupId) {
-        String targerURL = smartDataBaseURL
+        String targetURL = SmartDataRecordsApi
                 + "view_group_members"
-                + STORAGE_GAMIFICATION
+                + StorageGamification
                 + "&filter=group_id,eq,"
                 + groupId;
-        SimpleResponse resp = HttpService.get(targerURL);
+        
+        SimpleResponse resp = HttpService.get(targetURL);
         if(resp.getStatus() != 200) {
             return null;
         }

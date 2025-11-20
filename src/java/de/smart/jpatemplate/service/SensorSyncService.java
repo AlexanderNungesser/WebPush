@@ -1,13 +1,12 @@
 package de.smart.jpatemplate.service;
 
-import de.smart.jpatemplate.data.PropertiesEditor;
 import de.smart.jpatemplate.data.SimpleResponse;
-import static de.smart.jpatemplate.rest.ManagementResource.STORAGE_GAMIFICATION;
-import static de.smart.jpatemplate.rest.ManagementResource.smartDataBaseURL;
+import static de.smart.jpatemplate.rest.ManagementResource.*;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 
 import java.io.IOException;
@@ -31,17 +30,19 @@ public class SensorSyncService {
             System.out.println("WebPush - Group already registered in gamification.groups");
         } else {
             //create gamification.groups entry
-            Map<String, String> groupPayload = new HashMap<>();
-            groupPayload.put("name", name);
-            groupPayload.put("data_table", collection);
-
-            String groupURL = smartDataBaseURL + "groups" + STORAGE_GAMIFICATION;
-            HttpService.post(groupURL, groupPayload.toString());
+            JsonObjectBuilder groupBuilder = Json.createObjectBuilder()
+                    .add("name", name)
+                    .add("data_table", collection);
+            JsonObject groupJson = groupBuilder.build();
+            
+            String groupURL = SmartDataRecordsApi + "groups" + StorageGamification;
+            HttpService.post(groupURL, groupJson.toString());
         }
         
         //edit SmartDataAirquality_config.properties
         try {
-            PropertiesEditor.addMirroringEvent(collection, name);
+            PropertiesWebhookService.addMirroringEvent(collection, name);
+            
         } catch (IOException ex) {
             System.err.println("WebPush - Error writing mirroring event: " + ex.getMessage());
             return;
@@ -51,7 +52,7 @@ public class SensorSyncService {
 
     
     private boolean groupExists(String name, String collection) {
-        String targetURL = smartDataBaseURL + "groups" + STORAGE_GAMIFICATION;
+        String targetURL = SmartDataRecordsApi + "groups" + StorageGamification;
         try {
             SimpleResponse response = HttpService.get(targetURL);
 
