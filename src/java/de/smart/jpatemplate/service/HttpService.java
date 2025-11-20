@@ -5,6 +5,7 @@
 package de.smart.jpatemplate.service;
 
 import de.smart.jpatemplate.data.SimpleResponse;
+import jakarta.json.JsonObject;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -19,6 +20,12 @@ import java.net.http.HttpResponse;
 public class HttpService {
 
     private static final HttpClient http = HttpClient.newHttpClient();
+    
+    public static final String SmartDataRecordsApi = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
+    public static final String WebPushResourceApi = "http://localhost:8080/WebPush/webpush/";
+    public static final String StorageSmartmonitoring = "?storage=smartmonitoring";
+    public static final String StorageGamification = "?storage=gamification"; 
+    
 
     // ───────────────────────────────────────────────────────────────
     // GET
@@ -44,7 +51,7 @@ public class HttpService {
     // ───────────────────────────────────────────────────────────────
     // POST
     // ───────────────────────────────────────────────────────────────
-    public static SimpleResponse post(String url, String body) {
+    private static SimpleResponse post(String url, String body) {
         try {
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -61,6 +68,9 @@ public class HttpService {
             String err = "{\"error\":\"POST request failed: " + e.getMessage() + "\"}";
             return new SimpleResponse(500, err);
         }
+    }
+    public static SimpleResponse post(String url, JsonObject json) {
+        return post(url, json.toString());
     }
     
     // ───────────────────────────────────────────────────────────────

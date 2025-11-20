@@ -47,8 +47,8 @@ public class SensorSyncService {
                     .add("data_table", collection);
             JsonObject groupJson = groupBuilder.build();
             
-            String groupURL = SmartDataRecordsApi + "groups" + StorageGamification;
-            HttpService.post(groupURL, groupJson.toString());
+            String groupURL = HttpService.SmartDataRecordsApi + "groups" + HttpService.StorageGamification;
+            HttpService.post(groupURL, groupJson);
         }
         
         //edit SmartDataAirquality_config.properties
@@ -69,7 +69,7 @@ public class SensorSyncService {
     @param collection: String of the data-table (smartmonitoring.<data-table>)
     */
     private static boolean groupExists(String name, String collection) {
-        String targetURL = SmartDataRecordsApi + "groups" + StorageGamification;
+        String targetURL = HttpService.SmartDataRecordsApi + "groups" + HttpService.StorageGamification;
         try {
             SimpleResponse response = HttpService.get(targetURL);
 

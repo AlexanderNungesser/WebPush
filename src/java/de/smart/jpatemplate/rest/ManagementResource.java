@@ -4,36 +4,24 @@ import de.smart.jpatemplate.data.SimpleResponse;
 import de.smart.jpatemplate.data.TriggerResult;
 import de.smart.jpatemplate.service.HttpService;
 import de.smart.jpatemplate.service.NotificationService;
-import de.smart.jpatemplate.service.SensorSyncService;
 import de.smart.jpatemplate.service.TriggerService;
 import jakarta.json.Json;
-import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import netscape.javascript.JSObject;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
 
 @Path("/admin")
 public class ManagementResource {
-    public static final String SmartDataRecordsApi = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
-    public static final String WebPushResourceApi = "http://localhost:8080/WebPush/webpush/";
-    public static final String StorageSmartmonitoring = "?storage=smartmonitoring";
-    public static final String StorageGamification = "?storage=gamification"; 
-    
-    
     
     @GET
     @Path("/notification/send_random")
@@ -93,7 +81,10 @@ public class ManagementResource {
                     .add("trigger_id", triggerId != null ? triggerId : "")
                     .build();
 
-            SimpleResponse resp = HttpService.post(SmartDataRecordsApi + "notifications" + StorageGamification, notification.toString());        
+            final String notificationPostUrl = HttpService.SmartDataRecordsApi
+                    + "notifications"
+                    + HttpService.StorageGamification;
+            SimpleResponse resp = HttpService.post(notificationPostUrl, notification);        
 
             String respbody = resp.readEntity(String.class).trim();
             int notificationId = Integer.parseInt(respbody);
@@ -108,7 +99,10 @@ public class ManagementResource {
                             .add("action_id", actionId)
                             .build();
                 
-                    HttpService.post(SmartDataRecordsApi + "notification_actions" + StorageGamification, notifAction.toString());
+                    final String notificationActionsPostUrl = HttpService.SmartDataRecordsApi
+                            + "notification_actions"
+                            + HttpService.StorageGamification;
+                    HttpService.post(notificationActionsPostUrl, notifAction);
                 }
             }
 
@@ -128,10 +122,10 @@ public class ManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createTrigger(String payload) {
         try (JsonReader reader = Json.createReader(new StringReader(payload))) {
-            System.out.println("RAW PAYLOAD = " + payload);
+            //System.out.println("RAW PAYLOAD = " + payload);
 
             JsonObject json = reader.readObject();
-            System.out.println("PARSED JSON = " + json);
+            //System.out.println("PARSED JSON = " + json);
 
             // TODO: SCHMEISS `schedule_type` RAUS
             
@@ -153,9 +147,12 @@ public class ManagementResource {
 
             JsonObject trigger = triggerBuilder.build();
             
-            System.out.println("FINAL TRIGGER JSON = " + trigger);
-
-            SimpleResponse resp = HttpService.post(SmartDataRecordsApi + "triggers" + StorageGamification, trigger.toString());
+            //System.out.println("FINAL TRIGGER JSON = " + trigger);
+            
+            final String triggerPostUrl = HttpService.SmartDataRecordsApi
+                    + "triggers"
+                    + HttpService.StorageGamification;
+            SimpleResponse resp = HttpService.post(triggerPostUrl, trigger);
 
             String respbody = resp.readEntity(String.class).trim();
             int triggerId = Integer.parseInt(respbody);
@@ -174,7 +171,10 @@ public class ManagementResource {
                             .add("threshold", threshold)
                             .build();
                     
-                    HttpService.post(SmartDataRecordsApi + "condition" + StorageGamification, condition.toString());
+                    final String conditionPostUrl = HttpService.SmartDataRecordsApi
+                            + "condition"
+                            + HttpService.StorageGamification;
+                    HttpService.post(conditionPostUrl, condition);
 
                     System.out.println("Linking Condition ID " + Integer.parseInt(index) + " to Trigger ID " + triggerId);
                 
@@ -183,7 +183,10 @@ public class ManagementResource {
                             .add("condition_id", Integer.parseInt(index))
                             .build();
                 
-                    HttpService.post(SmartDataRecordsApi + "trigger_conditions" + StorageGamification, triggerCond.toString());
+                    final String triggerConditionsPostUrl = HttpService.SmartDataRecordsApi
+                            + "trigger_conditions"
+                            + HttpService.StorageGamification;
+                    HttpService.post(triggerConditionsPostUrl, triggerCond);
                 }
             }
             

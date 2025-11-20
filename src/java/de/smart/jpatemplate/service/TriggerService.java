@@ -13,6 +13,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -28,10 +29,10 @@ import java.util.stream.Collectors;
 
 public class TriggerService {
 
-    public static String SMARTDATA_BASE_URL = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
+    //public static String SMARTDATA_BASE_URL = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
     public static String SMARTDATA_STARTJOB_URL = "http://localhost:8080/SmartDataJobs/smartdatajobs/jobexecution/start?smartdataurl=/SmartDataAirquality";
-    public static String STORAGE_GAMIFICATION = "?storage=gamification";
-    public static String STORAGE_SMARTMONITORING = "?storage=smartmonitoring";
+    //public static String STORAGE_GAMIFICATION = "?storage=gamification";
+    //public static String STORAGE_SMARTMONITORING = "?storage=smartmonitoring";
     private static final String DATAJOBS = "datajobs";
     private static final String DATAJOBS_PARAMS = "datajobs_params";
     private static final DateTimeFormatter fmt = new DateTimeFormatterBuilder()
@@ -67,11 +68,11 @@ public class TriggerService {
     }
 
     public static List<TriggerResult> getTriggers() {
-        String targetURL = SMARTDATA_BASE_URL
+        final String triggerGetUrl = HttpService.SmartDataRecordsApi
                 + "view_triggers_with_schedule"
-                + STORAGE_GAMIFICATION;
+                + HttpService.StorageGamification;
 
-        SimpleResponse resp = HttpService.get(targetURL);
+        SimpleResponse resp = HttpService.get(triggerGetUrl);
         if (resp.getStatus() != 200) {
             return null;
         }
@@ -103,13 +104,13 @@ public class TriggerService {
     }
     
     public static boolean jobAlreadyExists(TriggerResult trigger) {
-        String jobParamsURL = SMARTDATA_BASE_URL
+        final String jobParamsUrl = HttpService.SmartDataRecordsApi
                 + DATAJOBS_PARAMS
-                + STORAGE_SMARTMONITORING
+                + HttpService.StorageSmartmonitoring
                 + "&filter=key,eq,trigger_id"
                 + "&filter=value,eq," + trigger.id();
         
-        SimpleResponse jobParamsResp = HttpService.get(jobParamsURL);
+        SimpleResponse jobParamsResp = HttpService.get(jobParamsUrl);
         if (jobParamsResp.getStatus() != 200) {
             return true;
         }
@@ -128,9 +129,9 @@ public class TriggerService {
     }
     
     public static SimpleResponse createJobForTrigger(TriggerResult tr) {
-        String createJobURL = SMARTDATA_BASE_URL
+        final String createJobUrl = HttpService.SmartDataRecordsApi
                 + DATAJOBS
-                + STORAGE_SMARTMONITORING;
+                + HttpService.StorageSmartmonitoring;
 
         JsonObjectBuilder jsonJobBody = Json.createObjectBuilder()
                 .add("name", "sendNotification")
@@ -138,34 +139,34 @@ public class TriggerService {
                 .add("active", true)
                 .add("start", tr.next().toLocalDateTime().format(fmt));
 
-        String jobBody = (tr.seconds() == 0)
-                ? jsonJobBody.addNull("repeatsecs").build().toString()
-                : jsonJobBody.add("repeatsecs", tr.seconds()).build().toString();
+        JsonObject jobBody = (tr.seconds() == 0)
+                ? jsonJobBody.addNull("repeatsecs").build()
+                : jsonJobBody.add("repeatsecs", tr.seconds()).build();
 
-        SimpleResponse createJobResp = HttpService.post(createJobURL, jobBody);
+        SimpleResponse createJobResp = HttpService.post(createJobUrl, jobBody);
         if (createJobResp.getStatus() != 201) {
             return new SimpleResponse(createJobResp.getStatus(), createJobResp.readEntity(String.class));
         }
         String jsonText = createJobResp.readEntity(String.class);
         int datajobId = Integer.parseInt(jsonText);
-        String jobParamsURL = SMARTDATA_BASE_URL
+        final String jobParamsUrl = HttpService.SmartDataRecordsApi
                 + DATAJOBS_PARAMS
-                + STORAGE_SMARTMONITORING;
-
-        String paramsBody = Json.createObjectBuilder()
+                + HttpService.StorageSmartmonitoring;
+        
+        JsonObject paramsBody = Json.createObjectBuilder()
                 .add("key", "trigger_id")
                 .add("value", tr.id())
                 .add("datajob_id", datajobId)
                 .add("type", "int")
-                .build().toString();
+                .build();
 
-        SimpleResponse jobParamsResp = HttpService.post(jobParamsURL, paramsBody);
+        SimpleResponse jobParamsResp = HttpService.post(jobParamsUrl, paramsBody);
         if (jobParamsResp.getStatus() != 201) {
             return new SimpleResponse(jobParamsResp.getStatus(), jobParamsResp.readEntity(String.class));
         }
-
+        
         String startJobURL = SMARTDATA_STARTJOB_URL
-                + "&" + STORAGE_SMARTMONITORING.substring(1)
+                + "&" + HttpService.StorageSmartmonitoring.substring(1)
                 + "&collection=" + DATAJOBS
                 + "&id=" + datajobId;
 
@@ -176,8 +177,8 @@ public class TriggerService {
 
         return new SimpleResponse(startJobResp.getStatus(),
                 Json.createObjectBuilder()
-                        .add(DATAJOBS, Json.createReader(new StringReader(jobBody)).readObject())
-                        .add(DATAJOBS_PARAMS, Json.createReader(new StringReader(paramsBody)).readObject())
+                        .add(DATAJOBS, Json.createReader(new StringReader(jobBody.toString())).readObject())
+                        .add(DATAJOBS_PARAMS, Json.createReader(new StringReader(paramsBody.toString())).readObject())
                         .build().toString());
     }
 

@@ -87,7 +87,7 @@ public class PropertiesWebhookService {
                 sensorTable,
                 "SMARTMONITORING",
                 WebhookAction.POST,
-                ManagementResource.WebPushResourceApi + "webhook/sensor_push/" + sensorTable,
+                HttpService.WebPushResourceApi + "webhook/sensor_push/" + sensorTable,
                 "RECORDS",
                 "SmartDataAirquality_config",
                 "Mirroring of: " + sensorName

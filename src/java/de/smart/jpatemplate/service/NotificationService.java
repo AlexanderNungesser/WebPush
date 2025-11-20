@@ -22,9 +22,9 @@ public class NotificationService {
     
     //return random fitting notification
     public JsonObject pickRandomNotification(int triggerId) {
-        String targetURL = SmartDataRecordsApi 
+        String targetURL = HttpService.SmartDataRecordsApi 
                 + "notifications" 
-                + StorageGamification
+                + HttpService.StorageGamification
                 + "&filter=trigger_id,eq,"
                 + triggerId;
             SimpleResponse resp = HttpService.get(targetURL);
@@ -64,9 +64,9 @@ public class NotificationService {
     
     //load all Member to a specific group (based on DB-View)
     private JsonArray loadMembers(int groupId) {
-        String targetURL = SmartDataRecordsApi
+        String targetURL = HttpService.SmartDataRecordsApi
                 + "view_group_members"
-                + StorageGamification
+                + HttpService.StorageGamification
                 + "&filter=group_id,eq,"
                 + groupId;
         
