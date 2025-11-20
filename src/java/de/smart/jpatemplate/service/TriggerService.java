@@ -40,7 +40,7 @@ public class TriggerService {
             .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
             .optionalEnd()
             .toFormatter();
-    
+        
     public static TriggerResult getTrigger(int triggerId, JsonObject payload) {
 
         String cron = (payload.getJsonString("cron") != null)
@@ -103,7 +103,7 @@ public class TriggerService {
     }
 
     public static SimpleResponse createJobForTrigger(TriggerResult tr) {
-        String targetURL = SMARTDATA_BASE_URL
+        String createJobURL = SMARTDATA_BASE_URL
                 + DATAJOBS
                 + STORAGE_SMARTMONITORING;
 
@@ -117,13 +117,13 @@ public class TriggerService {
                 ? jsonJobBody.addNull("repeatsecs").build().toString()
                 : jsonJobBody.add("repeatsecs", tr.seconds()).build().toString();
 
-        SimpleResponse resp = HttpService.post(targetURL, jobBody);
-        if (resp.getStatus() != 201) {
-            return null;
+        SimpleResponse createJobResp = HttpService.post(createJobURL, jobBody);
+        if (createJobResp.getStatus() != 201) {
+            return new SimpleResponse(createJobResp.getStatus(), createJobResp.readEntity(String.class));
         }
-        String jsonText = resp.readEntity(String.class);
+        String jsonText = createJobResp.readEntity(String.class);
         int datajobId = Integer.parseInt(jsonText);
-        targetURL = SMARTDATA_BASE_URL
+        String jobParamsURL = SMARTDATA_BASE_URL
                 + DATAJOBS_PARAMS
                 + STORAGE_SMARTMONITORING;
 
@@ -134,22 +134,22 @@ public class TriggerService {
                 .add("type", "int")
                 .build().toString();
 
-        resp = HttpService.post(targetURL, paramsBody);
-        if (resp.getStatus() != 201) {
-            return new SimpleResponse(resp.getStatus(), resp.readEntity(String.class));
+        SimpleResponse jobParamsResp = HttpService.post(jobParamsURL, paramsBody);
+        if (jobParamsResp.getStatus() != 201) {
+            return new SimpleResponse(jobParamsResp.getStatus(), jobParamsResp.readEntity(String.class));
         }
         
-        targetURL = SMARTDATA_STARTJOB_URL
-                + STORAGE_SMARTMONITORING
+        String startJobURL = SMARTDATA_STARTJOB_URL
+                + "&" + STORAGE_SMARTMONITORING.substring(1)
                 + "&collection=" + DATAJOBS
                 + "&id=" + datajobId;
         
-        resp = HttpService.get(targetURL);
-        if (resp.getStatus() != 200) {
-            return new SimpleResponse(resp.getStatus(), resp.readEntity(String.class));
+        SimpleResponse startJobResp = HttpService.get(startJobURL);
+        if (startJobResp.getStatus() != 200) {
+            return new SimpleResponse(startJobResp.getStatus(), startJobResp.readEntity(String.class));
         }
         
-        return new SimpleResponse(resp.getStatus(),
+        return new SimpleResponse(startJobResp.getStatus(),
                 Json.createObjectBuilder()
                         .add(DATAJOBS, Json.createReader(new StringReader(jobBody)).readObject())
                         .add(DATAJOBS_PARAMS, Json.createReader(new StringReader(paramsBody)).readObject())
