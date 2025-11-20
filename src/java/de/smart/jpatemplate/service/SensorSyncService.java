@@ -14,20 +14,32 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+This class processes given Sensors.
+Responsibilities:
+- create entrys in gamification.groups
+- create webhooks to observe data-tables (smartmonitoring.<table-name>)
+*/
 public class SensorSyncService {
 
-    public void processSensor(JsonObject json) {
+    /*
+    The method processSensor synchronizes a given sensor to gamification
+    Responsibilities:
+    - create a group entry for the given sensor: gamification.gorups
+    - creates a webhook for table-observation via "PropertiesWebhookService"
+    */
+    public static void processSensor(JsonObject json) {
         String name = json.getString("name", "");
         String collection = json.getString("data_collection", "");
         int ootype_id = json.getInt("ootype_id", 0);
         
-        // only mobile sensors
+        //only mobile sensors
         if(ootype_id != 3) {
             return;
         }
-        // check whether group already exists
+        //check whether group already exists
         if (groupExists(name, collection)) {
-            System.out.println("WebPush - Group already registered in gamification.groups");
+            System.out.println("WebPush - Sensor '" + name + "' already registered in gamification.groups");
         } else {
             //create gamification.groups entry
             JsonObjectBuilder groupBuilder = Json.createObjectBuilder()
@@ -47,11 +59,16 @@ public class SensorSyncService {
             System.err.println("WebPush - Error writing mirroring event: " + ex.getMessage());
             return;
         }
-        System.out.println("WebPush -- tbl_observedobject synchronized");
+        System.out.println("WebPush -- Sensor '" + name + "' synchronized");
     }
 
     
-    private boolean groupExists(String name, String collection) {
+    /*
+    This method checks if a given group <name & collection> is already registered in the database gamification.groups
+    @param name: String of the Sensor-Name
+    @param collection: String of the data-table (smartmonitoring.<data-table>)
+    */
+    private static boolean groupExists(String name, String collection) {
         String targetURL = SmartDataRecordsApi + "groups" + StorageGamification;
         try {
             SimpleResponse response = HttpService.get(targetURL);

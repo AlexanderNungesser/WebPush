@@ -19,23 +19,31 @@ import de.smart.jpatemplate.service.PropertiesWebhookService;
 import de.smart.jpatemplate.service.TriggerService;
 import jakarta.json.JsonArrayBuilder;
 import java.util.List;
+import java.io.IOException;
 
-
+/*
+Application startup listener for initializing WebPush-related components.
+Responsibilities:
+- fetch all sensors via SmartDataAirquality: smartmonitoring.tbl_observedobjects
+- creates for every mobile Sensor a group entry via "SensorSyncService"
+- creates for every mobile Sensor a Post-Webhook via "PropertiesWebhookService"
+- creates used Webhooks for smartmonitoring.tbl_observedobjects and gamification.triggers via "PropertiesWebhookService"
+*/
 @WebListener
 public class AppStartupListener implements ServletContextListener {
     
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         System.out.println("=== Initial WebPush - Sync Startup ===");
-
-        SensorSyncService syncService = new SensorSyncService();
+        
+        //read all Sensors
         String targetURL = SmartDataRecordsApi + "tbl_observedobject" + StorageSmartmonitoring;
         SimpleResponse sr = HttpService.get(targetURL);
-        
         if(sr.getStatus() != 200) {
             System.err.println("WebPush - Startup Sync failed: Http " + sr.getStatus());
             return;
         }
+        //load and parse json
         String jsonText = sr.readEntity(String.class);
         try(JsonReader reader = Json.createReader(new StringReader(jsonText))) {
             JsonObject root = reader.readObject();
@@ -46,10 +54,12 @@ public class AppStartupListener implements ServletContextListener {
                 return;
             }
             
+            //iterate sensors and process Sensor
             for(JsonObject obj : records.getValuesAs(JsonObject.class)) {
-                syncService.processSensor(obj);
+                SensorSyncService.processSensor(obj);
             }
         }
+        //manually creation of additional webhooks
         try {
             PropertiesWebhookService.addWebhook("tbl_observedobject", 
                     "SMARTMONITORING", 
@@ -75,7 +85,7 @@ public class AppStartupListener implements ServletContextListener {
                     null, 
                     "React on deleted Triggers");
             
-        } catch (Exception e){
+        } catch (IOException e){
             //do nothing
         }
         List<TriggerResult> triggers = TriggerService.getTriggers();
