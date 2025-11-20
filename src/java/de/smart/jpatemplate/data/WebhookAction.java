@@ -5,8 +5,7 @@
 package de.smart.jpatemplate.data;
 
 /**
- *
- * @author Hannes
+ * This enum contains valid webhook-types
  */
 public enum WebhookAction {
     POST, DELETE;
