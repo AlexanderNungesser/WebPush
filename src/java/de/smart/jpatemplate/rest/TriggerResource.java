@@ -24,18 +24,18 @@ public class TriggerResource {
     public Response mirror_post(JsonObject payload) {
         System.out.println("=== Webhook Triggered (POST) ===");
         System.out.println("Payload: " + payload);
-        
-        /* TODO: hier ist trigger schon erstellt, aber wenn schon einer existiert,
-            schmeißt SmartData API fehler und erstellt keinen zweiten.
-        Ohne aktuelle exists Prüfung wird dann pro Aufruf job+params erstellt/dupliziert
-        Mit aktuelle exists Prüfung werden gar keine job+params erstellt
-        */
-        
-        boolean exists = TriggerService.triggerAlreadyExists(payload);
-        if (exists) {
-            SimpleResponse resp = TriggerService.deleteTrigger(payload);
-            return Response.serverError().status(500, "Trigger " + payload + " already exists").entity(resp.readEntity(String.class)).build();
-        }
+//        
+//        /* TODO: hier ist trigger schon erstellt, aber wenn schon einer existiert,
+//            schmeißt SmartData API fehler und erstellt keinen zweiten.
+//        Ohne aktuelle exists Prüfung wird dann pro Aufruf job+params erstellt/dupliziert
+//        Mit aktuelle exists Prüfung werden gar keine job+params erstellt
+//        */
+//        
+//        boolean exists = TriggerService.triggerAlreadyExists(payload);
+//        if (exists) {
+//            SimpleResponse resp = TriggerService.deleteTrigger(payload);
+//            return Response.serverError().status(500, "Trigger " + payload + " already exists").entity(resp.readEntity(String.class)).build();
+//        }
         TriggerResult tr = TriggerService.getTrigger("id", payload);
 
         SimpleResponse resp = TriggerService.createJobForTrigger(tr);

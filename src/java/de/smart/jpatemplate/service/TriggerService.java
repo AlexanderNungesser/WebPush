@@ -49,14 +49,14 @@ public class TriggerService {
                 ? payload.getString("cron")
                 : null;
 
-        String timestamp = (payload.getJsonString("timestamp") != null)
-                ? payload.getString("timestamp")
+        String timestamp = (payload.getJsonString("time_once") != null)
+                ? payload.getString("time_once")
                 : null;
 
         String targetURL = SMARTDATA_BASE_URL
                 + TRIGGERS
                 + STORAGE_GAMIFICATION
-                + "&filter=" + ((cron == null) ? "timestamp" : "cron") + ",eq,"
+                + "&filter=" + ((cron == null) ? "time_once" : "cron") + ",eq,"
                 + ((cron == null) ? timestamp : cron);
 
         SimpleResponse resp = HttpService.get(targetURL);
@@ -93,8 +93,8 @@ public class TriggerService {
                 ? payload.getString("last_triggered_at")
                 : null;
 
-        String timestamp = (payload.getJsonString("timestamp") != null)
-                ? payload.getString("timestamp")
+        String timestamp = (payload.getJsonString("time_once") != null)
+                ? payload.getString("time_once")
                 : null;
 
         String timeStr = (lastTriggeredAt == null)
