@@ -171,20 +171,20 @@ public class ManagementResource {
                             .add("operator", operator)
                             .add("threshold", threshold)
                             .build();
-
-                    if (findExisting("conditions", condition) != null) {
-                        return Response.status(Response.Status.CONFLICT)
-                                .entity("{\"error\":\"Condition already exists.\"}")
-                                .build();
-                    }
                     
-                    final String conditionPostUrl = HttpService.SmartDataRecordsApi
-                            + "conditions"
-                            + HttpService.StorageGamification;
-                    SimpleResponse conditionresp = HttpService.post(conditionPostUrl, condition);
+                    JsonObject existingCondition = findExisting("conditions", condition);
+                    int conditionId;
+                    if (existingCondition == null) {
+                        final String conditionPostUrl = HttpService.SmartDataRecordsApi
+                                + "conditions"
+                                + HttpService.StorageGamification;
+                        SimpleResponse conditionresp = HttpService.post(conditionPostUrl, condition);
 
-                    String condrespbody = conditionresp.readEntity(String.class).trim();
-                    int conditionId = Integer.parseInt(condrespbody);
+                        String condrespbody = conditionresp.readEntity(String.class).trim();
+                        conditionId = Integer.parseInt(condrespbody);
+                    } else {
+                        conditionId = existingCondition.getInt("id");
+                    }
 
                     System.out.println("Linking Condition ID " + conditionId + " to Trigger ID " + triggerId);
                 
@@ -201,7 +201,6 @@ public class ManagementResource {
             }
             
             TriggerResult tr = TriggerService.getTrigger(triggerId, trigger);
-
             SimpleResponse res = TriggerService.createJobForTrigger(tr);
 
             return Response.status(triggerresp.getStatus()).entity(triggerresp.readEntity(String.class)).build();
