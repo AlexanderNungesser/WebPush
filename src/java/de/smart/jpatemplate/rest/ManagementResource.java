@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.Response;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Path("/admin")
 public class ManagementResource {
@@ -80,6 +81,12 @@ public class ManagementResource {
                     .add("trigger_id", triggerId != null ? triggerId : "")
                     .build();
 
+            if (findExisting("notifications", notification) != null) {
+                return Response.status(Response.Status.CONFLICT)
+                        .entity("{\"error\":\"Notification already exists.\"}")
+                        .build();
+            }
+
             final String notificationPostUrl = HttpService.SmartDataRecordsApi
                     + "notifications"
                     + HttpService.StorageGamification;
@@ -123,28 +130,32 @@ public class ManagementResource {
         try (JsonReader reader = Json.createReader(new StringReader(payload))) {
             JsonObject json = reader.readObject();
 
+            String description = json.getString("description", "Default Description");
             String scheduleCron = json.getString("schedule_cron", null);
             String scheduleTimestamp = json.getString("schedule_timestamp", null);
 
-            String description = json.getString("description", "Default Description");
-
-            JsonObjectBuilder triggerBuilder = Json.createObjectBuilder()
+            JsonObjectBuilder builder = Json.createObjectBuilder()
                     .add("description", description);
 
-            if (scheduleCron != null && !scheduleCron.isBlank()) {
+            if (scheduleCron != null) {
                 if(!TriggerService.isValidCron(scheduleCron)) {
-                    return Response.status(Response.Status.ACCEPTED)
+                    return Response.status(Response.Status.BAD_REQUEST)
                             .entity("{\"error\":\"Invalid cron expression: " + scheduleCron + "\"}")
                             .build();
                 }
-                triggerBuilder.add("cron", scheduleCron);
+                builder.add("cron", scheduleCron);
             }
 
-            if (scheduleTimestamp != null && !scheduleTimestamp.isBlank()) {
-                triggerBuilder.add("time_once", scheduleTimestamp);
-            }
+            if (scheduleTimestamp != null)
+                builder.add("time_once", scheduleTimestamp);
 
-            JsonObject trigger = triggerBuilder.build();
+            JsonObject trigger = builder.build();
+
+            if (findExisting("triggers", trigger) != null) {
+                return Response.status(Response.Status.CONFLICT)
+                        .entity("{\"error\":\"Trigger already exists.\"}")
+                        .build();
+            }
             
             final String triggerPostUrl = HttpService.SmartDataRecordsApi
                     + "triggers"
@@ -167,13 +178,19 @@ public class ManagementResource {
                             .add("threshold", threshold)
                             .build();
                     
-                    final String conditionPostUrl = HttpService.SmartDataRecordsApi
-                            + "conditions"
-                            + HttpService.StorageGamification;
-                    SimpleResponse conditionresp = HttpService.post(conditionPostUrl, condition);
+                    JsonObject existingCondition = findExisting("conditions", condition);
+                    int conditionId;
+                    if (existingCondition == null) {
+                        final String conditionPostUrl = HttpService.SmartDataRecordsApi
+                                + "conditions"
+                                + HttpService.StorageGamification;
+                        SimpleResponse conditionresp = HttpService.post(conditionPostUrl, condition);
 
-                    String condrespbody = conditionresp.readEntity(String.class).trim();
-                    int conditionId = Integer.parseInt(condrespbody);
+                        String condrespbody = conditionresp.readEntity(String.class).trim();
+                        conditionId = Integer.parseInt(condrespbody);
+                    } else {
+                        conditionId = existingCondition.getInt("id");
+                    }
 
                     System.out.println("Linking Condition ID " + conditionId + " to Trigger ID " + triggerId);
                 
@@ -190,7 +207,6 @@ public class ManagementResource {
             }
             
             TriggerResult tr = TriggerService.getTrigger(triggerId, trigger);
-
             SimpleResponse res = TriggerService.createJobForTrigger(tr);
 
             return Response.status(triggerresp.getStatus()).entity(triggerresp.readEntity(String.class)).build();
@@ -199,4 +215,62 @@ public class ManagementResource {
             return Response.serverError().entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
+
+    public static JsonObject findExisting(String resource, JsonObject filterJson) {
+        try {
+            if (filterJson == null || filterJson.isEmpty()) return null;
+
+            StringBuilder url = new StringBuilder(
+                    HttpService.SmartDataRecordsApi + resource + HttpService.StorageGamification
+            );
+
+            SimpleResponse resp = HttpService.get(url.toString());
+            if (resp.getStatus() != 200) return null;
+
+            String body = resp.readEntity(String.class);
+
+            try (JsonReader reader = Json.createReader(new StringReader(body))) {
+
+                JsonObject root = reader.readObject();
+                System.out.println("findExisting response: " + root.toString());
+                if (!root.containsKey("records")) return null;
+
+                var arr = root.getJsonArray("records");
+
+                for (int i = 0; i < arr.size(); i++) {
+                    JsonObject item = arr.getJsonObject(i);
+
+                    boolean match = true;
+
+                    for (String key : filterJson.keySet()) {
+                        if (filterJson.isNull(key)) continue;
+
+                        String filterValue = filterJson.get(key).toString().replace("\"", "");
+
+                        if (!item.containsKey(key)) {
+                            match = false;
+                            break;
+                        }
+
+                        String itemValue = item.get(key).toString().replace("\"", "");
+
+                        if (!itemValue.equals(filterValue)) {
+                            match = false;
+                            break;
+                        }
+                    }
+
+                    if (match) {
+                        return item;
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
 }
