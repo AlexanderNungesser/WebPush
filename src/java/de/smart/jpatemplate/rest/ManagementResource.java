@@ -126,12 +126,17 @@ public class ManagementResource {
             String scheduleCron = json.getString("schedule_cron", null);
             String scheduleTimestamp = json.getString("schedule_timestamp", null);
 
-            String description = json.getString("description", "");
+            String description = json.getString("description", "Default Description");
 
             JsonObjectBuilder triggerBuilder = Json.createObjectBuilder()
                     .add("description", description);
 
             if (scheduleCron != null && !scheduleCron.isBlank()) {
+                if(!TriggerService.isValidCron(scheduleCron)) {
+                    return Response.status(Response.Status.ACCEPTED)
+                            .entity("{\"error\":\"Invalid cron expression: " + scheduleCron + "\"}")
+                            .build();
+                }
                 triggerBuilder.add("cron", scheduleCron);
             }
 

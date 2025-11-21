@@ -111,6 +111,12 @@ public class WebhookResource {
     public Response reactOnNewData(@PathParam("tablename") String tablename) {
         System.out.println("=== Webhook active: sensor_push ===");
         System.out.println("Edits in: " + tablename);
+        
+        //Conditions check
+        //valid?
+        //random notification
+        //personalize
+        //send
         return Response.ok().build();
     }
 }

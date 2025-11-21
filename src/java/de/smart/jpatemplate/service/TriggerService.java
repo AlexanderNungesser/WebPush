@@ -28,13 +28,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class TriggerService {
-
-    //public static String SMARTDATA_BASE_URL = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
-    //public static String SMARTDATA_STARTJOB_URL = "http://localhost:8080/SmartDataJobs/smartdatajobs/jobexecution/start?smartdataurl=/SmartDataAirquality";
-    //public static String STORAGE_GAMIFICATION = "?storage=gamification";
-    //public static String STORAGE_SMARTMONITORING = "?storage=smartmonitoring";
-    //private static final String DATAJOBS = "datajobs";
-    //private static final String DATAJOBS_PARAMS = "datajobs_params";
+    private static final CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ));
+        
     private static final DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
             .optionalStart()
@@ -183,8 +178,6 @@ public class TriggerService {
     }
 
     public static Optional<TriggerResult> parseCron(String cronString, ZonedDateTime reference, int triggerId) {
-        CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ));
-
         try {
             Cron cron = parser.parse(cronString);
             ExecutionTime executionTime = ExecutionTime.forCron(cron);
@@ -196,6 +189,14 @@ public class TriggerService {
         } catch (Exception e) {
             e.printStackTrace();
             return Optional.empty();
+        }
+    }
+    public static boolean isValidCron(String cronString) {
+        try {
+            Cron cron = parser.parse(cronString);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }
