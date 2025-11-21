@@ -68,6 +68,7 @@ public class AppStartupListener implements ServletContextListener {
                     null, 
                     "tbl Observe-Objects");
             
+            /* still in use?
             PropertiesWebhookService.addWebhook("Triggers", 
                     "GAMIFICATION", 
                     WebhookAction.POST, 
@@ -83,7 +84,8 @@ public class AppStartupListener implements ServletContextListener {
                     "RECORDS", 
                     null, 
                     "React on deleted Triggers");
-            
+            */
+
         } catch (IOException e){
             //do nothing
         }
