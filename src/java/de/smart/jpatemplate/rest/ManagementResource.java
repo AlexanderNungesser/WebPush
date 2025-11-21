@@ -150,12 +150,6 @@ public class ManagementResource {
                 builder.add("time_once", scheduleTimestamp);
 
             JsonObject trigger = builder.build();
-
-            if (findExisting("triggers", trigger) != null) {
-                return Response.status(Response.Status.CONFLICT)
-                        .entity("{\"error\":\"Trigger already exists.\"}")
-                        .build();
-            }
             
             final String triggerPostUrl = HttpService.SmartDataRecordsApi
                     + "triggers"
