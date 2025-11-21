@@ -60,6 +60,7 @@ public class ManagementResource {
     @Path("/createNotification")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createNotification(String payload) {
+        System.out.println(payload);
         try (JsonReader reader = Json.createReader(new StringReader(payload))) {
             JsonObject json = reader.readObject();
 
@@ -69,7 +70,7 @@ public class ManagementResource {
             String imageUrl = json.getString("image_url", null);
             boolean renotify = json.getBoolean("renotify", false);
             boolean silent = json.getBoolean("silent", false);
-            String triggerId = json.getString("trigger_id", null);
+            int triggerId = json.getInt("trigger_id", -1);
 
             JsonObject notification = Json.createObjectBuilder()
                     .add("title", title)
@@ -78,7 +79,7 @@ public class ManagementResource {
                     .add("image_url", imageUrl != null ? imageUrl : "")
                     .add("renotify", renotify)
                     .add("silent", silent)
-                    .add("trigger_id", triggerId != null ? triggerId : "")
+                    .add("trigger_id", triggerId)
                     .build();
 
             if (findExisting("notifications", notification) != null) {
