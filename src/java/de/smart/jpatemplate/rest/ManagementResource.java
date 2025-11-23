@@ -3,7 +3,6 @@ package de.smart.jpatemplate.rest;
 import de.smart.jpatemplate.data.SimpleResponse;
 import de.smart.jpatemplate.data.TriggerResult;
 import de.smart.jpatemplate.service.HttpService;
-import de.smart.jpatemplate.service.NotificationService;
 import de.smart.jpatemplate.service.TriggerService;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -12,47 +11,15 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
-import java.util.Map;
 
 @Path("/admin")
 public class ManagementResource {
-    
-    @GET
-    @Path("/notification/send_random")
-    public Response sendRandomNotification(
-            @QueryParam("trigger_id") Integer triggerId,
-            @QueryParam("group_id") int groupId
-            ) {
-        if(triggerId == null) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Missing query parameter: trigger_id")
-                    .build();
-        }
-        try {
-            NotificationService svc = new NotificationService();
-            
-            JsonObject selected = svc.pickRandomNotification(triggerId);
-            if(selected == null) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity("No Notification found")
-                        .build();
-            }
-            svc.distributeNotification(selected, groupId);
-            return Response.ok(selected.toString()).build();
-        } catch (Exception e) {
-            return Response.serverError()
-                    .entity("Internal error: " + e.getMessage())
-                    .build();
-        }
-    }
     
     // ───────────────────────────────────────────────────────────────
     // Create Notification Endpoint
