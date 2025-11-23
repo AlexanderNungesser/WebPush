@@ -90,6 +90,9 @@ public class AppStartupListener implements ServletContextListener {
             //do nothing
         }
         List<TriggerResult> triggers = TriggerService.getTriggers();
+        if(triggers == null || triggers.isEmpty()) {
+            return;
+        }
         JsonArrayBuilder resp = Json.createArrayBuilder();
         
         System.out.println("=== Job Creation for all Triggers ===");

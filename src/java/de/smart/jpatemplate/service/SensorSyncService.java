@@ -1,7 +1,6 @@
 package de.smart.jpatemplate.service;
 
 import de.smart.jpatemplate.data.SimpleResponse;
-import static de.smart.jpatemplate.rest.ManagementResource.*;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -11,8 +10,6 @@ import jakarta.json.JsonReader;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashMap;
-import java.util.Map;
 
 /*
 This class processes given Sensors.
@@ -23,38 +20,40 @@ Responsibilities:
 public class SensorSyncService {
 
     /*
-    The method processSensor synchronizes a given sensor to gamification
+    The method processSensor synchronizes a given sensor to gamification and smartmonitoring
     Responsibilities:
-    - create a group entry for the given sensor: gamification.gorups
+    - create a group entry for the given sensor: gamification.groups
     - creates a webhook for table-observation via "PropertiesWebhookService"
+    - create a SmartDataJob with params in smartmonitoring.datajobs / smartmonitoring.datajobs_params
     */
     public static void processSensor(JsonObject json) {
-        String name = json.getString("name", "");
-        String collection = json.getString("data_collection", "");
-        int ootype_id = json.getInt("ootype_id", 0);
+        final String name = json.getString("name", "");
+        final String collection = json.getString("data_collection", "");
+        final int ootype_id = json.getInt("ootype_id", 0);
         
         //only mobile sensors
         if(ootype_id != 3) {
             return;
         }
-        //check whether group already exists
-        if (groupExists(name, collection)) {
-            System.out.println("WebPush - Sensor '" + name + "' already registered in gamification.groups");
-        } else {
-            //create gamification.groups entry
-            JsonObjectBuilder groupBuilder = Json.createObjectBuilder()
-                    .add("name", name)
-                    .add("data_table", collection);
-            JsonObject groupJson = groupBuilder.build();
-            
-            String groupURL = HttpService.SmartDataRecordsApi + "groups" + HttpService.StorageGamification;
-            HttpService.post(groupURL, groupJson);
+        
+        //check gamification.groups
+        int groupId = getGroupId(name, collection);
+        if(groupId == -1) {
+            groupId = createGroup(name, collection);
+            if(groupId == -1) return;
+        }
+        
+        //check datajobs
+        String jobName = "eventTrigger_" + name.replace(" ", "_");
+        int existingJobId = getJobIdForGroups(groupId, jobName, collection);
+        if(existingJobId == -1) {
+            int newJobId = createEventJob(jobName, groupId, collection);
+            if(newJobId == -1) return;
         }
         
         //edit SmartDataAirquality_config.properties
         try {
-            PropertiesWebhookService.addMirroringEvent(collection, name);
-            
+            PropertiesWebhookService.addMirroringEvent(collection, name);    
         } catch (IOException ex) {
             System.err.println("WebPush - Error writing mirroring event: " + ex.getMessage());
             return;
@@ -68,36 +67,189 @@ public class SensorSyncService {
     @param name: String of the Sensor-Name
     @param collection: String of the data-table (smartmonitoring.<data-table>)
     */
-    private static boolean groupExists(String name, String collection) {
+    private static int getGroupId(String name, String collection) {
         String targetURL = HttpService.SmartDataRecordsApi + "groups" + HttpService.StorageGamification;
-        try {
+        
+        try{
             SimpleResponse response = HttpService.get(targetURL);
-
-            if (response.getStatus() != 200) {
-                System.err.println("WebPush - cannot request gamification.groups.");
-                return false;
+            if(response.getStatus() != 200) {
+                return -1;
             }
             String jsonText = response.readEntity(String.class);
-            
-            try (JsonReader reader = Json.createReader(new StringReader(jsonText))) {
+            try(JsonReader reader = Json.createReader(new StringReader(jsonText))) {
                 JsonObject root = reader.readObject();
                 JsonArray records = root.getJsonArray("records");
-
-                if (records == null) {
-                    return false;
-                }
-                for (JsonObject obj : records.getValuesAs(JsonObject.class)) {
-                    String existingName  = obj.getString("name", "");
+                if(records == null) return -1;
+                
+                for(JsonObject obj : records.getValuesAs(JsonObject.class)) {
+                    String existingName = obj.getString("name", "");
                     String existingTable = obj.getString("data_table", "");
-                    
-                    if (existingName.equals(name) && existingTable.equals(collection)) {
-                        return true;
+                    if(existingName.equals(name) && existingTable.equals(collection)) {
+                        return obj.getInt("id");
                     }
                 }
             }
         } catch (Exception e) {
-            System.err.println("WebPush - Error while checking groupExists: " + e.getMessage());
+            System.err.println("WebPush - error in getGroupId: " + e.getMessage());
         }
-        return false;
+        return -1;
+    }
+    
+    /*
+    This Method creates a new Group via SmartData
+    @param name: String group-name
+    @param collection: Sensor-table name
+    return -1 if it fails
+    */
+    private static int createGroup(String name, String collection) {
+        int groupId = -1;
+        JsonObjectBuilder groupBuilder = Json.createObjectBuilder()
+                    .add("name", name)
+                    .add("data_table", collection);
+        JsonObject groupJson = groupBuilder.build();
+
+        final String groupURL = HttpService.SmartDataRecordsApi + "groups" + HttpService.StorageGamification;
+        SimpleResponse resp = HttpService.post(groupURL, groupJson);
+        if(resp.getStatus() != 201) {
+            System.err.println("WebPush - Could not create a new group for sensor '" + name + "'. HTTP: " + resp.getStatus());
+            return groupId;
+        }
+        String respbody = resp.readEntity(String.class).trim();
+        groupId = Integer.parseInt(respbody);
+        return groupId;
+    }
+    
+    /*
+    getJobIdForGroups checks if a job with the given name already exists
+    It also checks if the job-parameter are already created
+    @param groupId: int gamification.groupId
+    @param jobName: Name of the job to be tested
+    @param collection: String name of the sensor-table
+    */
+    private static int getJobIdForGroups(int groupId, String jobName, String collection) {
+        try{
+            //1)job by name
+            final String jobUrl = HttpService.SmartDataRecordsApi 
+                    + HttpService.DataJobs 
+                    + HttpService.StorageSmartmonitoring
+                    + "&filter=name,eq," + jobName;
+            
+            SimpleResponse resp1 = HttpService.get(jobUrl);
+            
+            if(resp1.getStatus() != 200) return -1;
+            
+            JsonObject root1 = Json.createReader(new StringReader(resp1.readEntity(String.class))).readObject();
+            JsonArray jobs = root1.getJsonArray("records");
+            if(jobs == null || jobs.isEmpty()) return -1;
+            
+            int jobId = jobs.getJsonObject(0).getInt("id");
+            
+            //2) check parameter group_id
+            boolean groupIdExists = isJobParameterExisting(jobId, "group_id", groupId);
+            if(!groupIdExists) return -1;
+            
+            //3) check parameter 
+            boolean SensorCollectionExists = isJobParameterExisting(jobId, "sensor_table", collection);
+            if(!SensorCollectionExists) return -1;
+            
+            return jobId;
+        } catch (Exception e) {
+            System.err.println("WebPush - error in getJobIdForGroups: " + e.getMessage());
+        }
+        return -1;
+    }
+    
+    /*
+    helper function to check if a parameter already exists
+    @param jobId: int id of the job
+    @param key: String name of the parameter-key
+    @param value: Object of the tested value
+    */
+    private static boolean isJobParameterExisting(int jobId, String key, Object value) {
+        String paramsURL = HttpService.SmartDataRecordsApi
+                + HttpService.DataJobsParams
+                + HttpService.StorageSmartmonitoring
+                + "&filter=datajob_id,eq," + jobId
+                + "&filter=key,eq," + key
+                + "&filter=value,eq," + value;
+        
+        SimpleResponse resp = HttpService.get(paramsURL);
+        if(resp.getStatus() != 200) return false;
+        
+        JsonObject root = Json.createReader(new StringReader(resp.readEntity(String.class))).readObject();
+        JsonArray parameter = root.getJsonArray("records");
+        
+        if(parameter == null || parameter.isEmpty()) return false;
+        return true;
+    }
+    
+    
+    /*
+    This Method handles the creation of a new Event-based job. 
+    It creates via SmartData a new job entry and if its sucessfull two params will be added to the params table
+    @param jobName: String of the new job-name
+    @param groupId: Int reference on the gamification.group
+    @param collection: String of the sensor-table of the given pi
+    return -1 if it fails
+    */
+    private static int createEventJob(String jobName, int groupId, String collection) {
+        int jobId = -1;
+        
+        // create a new job entry
+        final String jobAction = "CheckEventTriggers";
+        final String jobDesc = "Job for event-based Triggers";
+        
+        JsonObject newJob = Json.createObjectBuilder()
+                .add("name", jobName)
+                .add("desc", jobDesc)
+                .add("action", jobAction)
+                .add("active", true)
+                .build();
+        
+        final String createJobUrl = HttpService.SmartDataRecordsApi
+                + HttpService.DataJobs
+                + HttpService.StorageSmartmonitoring;
+        
+        SimpleResponse newJobResp = HttpService.post(createJobUrl, newJob);
+        if(newJobResp.getStatus() != 201) {
+            System.err.println("WebPush - Error while creating a new event-based job for: " + jobName);
+            return -1;
+        }
+        String respbody = newJobResp.readEntity(String.class).trim();
+        jobId = Integer.parseInt(respbody);
+        if(jobId == -1) {
+            return -1;
+        }
+        
+        // create a new job-params entry
+        final String jobParamsUrl = HttpService.SmartDataRecordsApi
+                + HttpService.DataJobsParams
+                + HttpService.StorageSmartmonitoring;
+        
+        JsonObject groupIdParam = Json.createObjectBuilder()
+                .add("key", "group_id")
+                .add("value", groupId)
+                .add("datajob_id", jobId)
+                .add("type", "int")
+                .build();
+        JsonObject sensorParam = Json.createObjectBuilder()
+                .add("key", "sensor_table")
+                .add("value", collection)
+                .add("datajob_id", jobId)
+                .add("type", "string")
+                .build();
+        
+        SimpleResponse jobParamsGroupResp = HttpService.post(jobParamsUrl, groupIdParam);
+        if (jobParamsGroupResp.getStatus() != 201) {
+            System.err.println("WebPush - Error while creating a new job-parameter -groupId- for: " + jobName);
+            return -1;
+        }
+        SimpleResponse jobParamsSensorResp = HttpService.post(jobParamsUrl, sensorParam);
+        if (jobParamsSensorResp.getStatus() != 201) {
+            System.err.println("WebPush - Error while create a new job-parameter -sensor_table- for: " + jobName);
+            return -1;
+        }
+        
+        return jobId;
     }
 }
