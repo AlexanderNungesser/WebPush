@@ -1,12 +1,7 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package de.smart.jpatemplate.rest;
 
 import de.smart.jpatemplate.data.SimpleResponse;
 import de.smart.jpatemplate.service.HttpService;
-import de.smart.jpatemplate.service.NotificationService;
 import de.smart.jpatemplate.service.SensorSyncService;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
