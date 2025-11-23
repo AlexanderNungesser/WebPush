@@ -6,6 +6,7 @@ import de.smart.jpatemplate.service.HttpService;
 import de.smart.jpatemplate.service.NotificationService;
 import de.smart.jpatemplate.service.TriggerService;
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
@@ -60,7 +61,6 @@ public class ManagementResource {
     @Path("/createNotification")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createNotification(String payload) {
-        System.out.println(payload);
         try (JsonReader reader = Json.createReader(new StringReader(payload))) {
             JsonObject json = reader.readObject();
 
@@ -96,19 +96,18 @@ public class ManagementResource {
             String respbody = resp.readEntity(String.class).trim();
             int notificationId = Integer.parseInt(respbody);
 
-
-            for (String key : json.keySet()) {
-                if (key.startsWith("action_") && json.getBoolean(key)) {
-                    int actionId = Integer.parseInt(key.substring(7));
-                
-                    JsonObject notifAction = Json.createObjectBuilder()
-                            .add("notification_id", notificationId)
-                            .add("action_id", actionId)
-                            .build();
-                
-                    final String notificationActionsPostUrl = HttpService.SmartDataRecordsApi
+            final String notificationActionsPostUrl = HttpService.SmartDataRecordsApi
                             + "notification_actions"
                             + HttpService.StorageGamification;
+            JsonArray actions = json.getJsonArray("actions");
+            if (actions != null) {
+                for (int i = 0; i < actions.size(); i++) {
+                    String actionStr = actions.getString(i);  
+                    int actionId = Integer.parseInt(actionStr);
+                    JsonObject notifAction = Json.createObjectBuilder()
+                        .add("notification_id", notificationId)
+                        .add("action_id", actionId)
+                        .build();
                     HttpService.post(notificationActionsPostUrl, notifAction);
                 }
             }
