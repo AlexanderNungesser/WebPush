@@ -18,6 +18,7 @@ Responsibilities:
 - create webhooks to observe data-tables (smartmonitoring.<table-name>)
 */
 public class SensorSyncService {
+    public static final String jobNamePrefix = "eventTrigger_";
 
     /*
     The method processSensor synchronizes a given sensor to gamification and smartmonitoring
@@ -44,7 +45,7 @@ public class SensorSyncService {
         }
         
         //check datajobs
-        String jobName = "eventTrigger_" + name.replace(" ", "_");
+        String jobName = jobNamePrefix + name.replace(" ", "_");
         int existingJobId = getJobIdForGroups(groupId, jobName, collection);
         if(existingJobId == -1) {
             int newJobId = createEventJob(jobName, groupId, collection);
@@ -129,20 +130,8 @@ public class SensorSyncService {
     private static int getJobIdForGroups(int groupId, String jobName, String collection) {
         try{
             //1)job by name
-            final String jobUrl = HttpService.SmartDataRecordsApi 
-                    + HttpService.DataJobs 
-                    + HttpService.StorageSmartmonitoring
-                    + "&filter=name,eq," + jobName;
-            
-            SimpleResponse resp1 = HttpService.get(jobUrl);
-            
-            if(resp1.getStatus() != 200) return -1;
-            
-            JsonObject root1 = Json.createReader(new StringReader(resp1.readEntity(String.class))).readObject();
-            JsonArray jobs = root1.getJsonArray("records");
-            if(jobs == null || jobs.isEmpty()) return -1;
-            
-            int jobId = jobs.getJsonObject(0).getInt("id");
+            int jobId = getJobIdByName(jobName);
+            if(jobId == -1) return -1;
             
             //2) check parameter group_id
             boolean groupIdExists = isJobParameterExisting(jobId, "group_id", groupId);
@@ -157,6 +146,22 @@ public class SensorSyncService {
             System.err.println("WebPush - error in getJobIdForGroups: " + e.getMessage());
         }
         return -1;
+    }
+    
+    public static int getJobIdByName(String jobName) {
+        final String jobUrl = HttpService.SmartDataRecordsApi 
+                    + HttpService.DataJobs 
+                    + HttpService.StorageSmartmonitoring
+                    + "&filter=name,eq," + jobName;
+        System.out.println(jobUrl);
+
+        SimpleResponse resp = HttpService.get(jobUrl);
+        if(resp.getStatus() != 200) return -1;
+
+        JsonObject root = Json.createReader(new StringReader(resp.readEntity(String.class))).readObject();
+        JsonArray jobs = root.getJsonArray("records");
+        if(jobs == null || jobs.isEmpty()) return -1;
+        return jobs.getJsonObject(0).getInt("id");
     }
     
     /*

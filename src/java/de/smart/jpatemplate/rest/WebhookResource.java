@@ -108,15 +108,27 @@ public class WebhookResource {
     @POST
     @Path("/sensor_push/{tablename}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response reactOnNewData(@PathParam("tablename") String tablename) {
+    public Response reactOnNewData(@PathParam("tablename") String tablename, String payload) {
         System.out.println("=== Webhook active: sensor_push ===");
         System.out.println("Edits in: " + tablename);
+        System.out.println("payload: " + payload);
         
-        //Conditions check
-        //valid?
-        //random notification
-        //personalize
-        //send
-        return Response.ok().build();
+        //start sensor-specific job
+        String jobName = SensorSyncService.jobNamePrefix + tablename.replace(" ", "_");
+        int existingJobId = SensorSyncService.getJobIdByName(jobName);
+        System.out.println("jobId: "+ existingJobId);
+        
+        if(existingJobId != -1) {
+            String startJobURL = HttpService.SmartDataJobsApi
+                + "&" + HttpService.StorageSmartmonitoring.substring(1)
+                + "&collection=" + HttpService.DataJobs
+                + "&id=" + existingJobId;
+            System.out.println(startJobURL);
+            SimpleResponse resp = HttpService.get(startJobURL);
+        }
+        
+        return Response.ok()
+                .entity("Webhook fired for " + tablename)
+                .build();
     }
 }
