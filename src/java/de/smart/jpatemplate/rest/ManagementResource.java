@@ -147,9 +147,11 @@ public class ManagementResource {
                 builder.add("cron", scheduleCron);
             }
 
-            if (scheduleTimestamp != null)
+            if (scheduleTimestamp != null) {
+                scheduleTimestamp += ":00";
                 builder.add("time_once", scheduleTimestamp);
-
+            }
+                
             JsonObject trigger = builder.build();
             
             final String triggerPostUrl = HttpService.SmartDataRecordsApi
