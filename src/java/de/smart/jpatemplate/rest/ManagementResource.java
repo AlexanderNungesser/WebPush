@@ -114,6 +114,7 @@ public class ManagementResource {
             }
 
             if (scheduleTimestamp != null) {
+                scheduleTimestamp += ":00";
                 builder.add("time_once", scheduleTimestamp);
             }
                 
