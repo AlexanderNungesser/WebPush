@@ -3,55 +3,23 @@ package de.smart.jpatemplate.rest;
 import de.smart.jpatemplate.data.SimpleResponse;
 import de.smart.jpatemplate.data.TriggerResult;
 import de.smart.jpatemplate.service.HttpService;
-import de.smart.jpatemplate.service.NotificationService;
 import de.smart.jpatemplate.service.TriggerService;
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
-import java.util.Map;
 
 @Path("/admin")
 public class ManagementResource {
-    
-    @GET
-    @Path("/notification/send_random")
-    public Response sendRandomNotification(
-            @QueryParam("trigger_id") Integer triggerId,
-            @QueryParam("group_id") int groupId
-            ) {
-        if(triggerId == null) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Missing query parameter: trigger_id")
-                    .build();
-        }
-        try {
-            NotificationService svc = new NotificationService();
-            
-            JsonObject selected = svc.pickRandomNotification(triggerId);
-            if(selected == null) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity("No Notification found")
-                        .build();
-            }
-            svc.distributeNotification(selected, groupId);
-            return Response.ok(selected.toString()).build();
-        } catch (Exception e) {
-            return Response.serverError()
-                    .entity("Internal error: " + e.getMessage())
-                    .build();
-        }
-    }
     
     // ───────────────────────────────────────────────────────────────
     // Create Notification Endpoint
@@ -69,7 +37,7 @@ public class ManagementResource {
             String imageUrl = json.getString("image_url", null);
             boolean renotify = json.getBoolean("renotify", false);
             boolean silent = json.getBoolean("silent", false);
-            String triggerId = json.getString("trigger_id", null);
+            int triggerId = json.getInt("trigger_id", -1);
 
             JsonObject notification = Json.createObjectBuilder()
                     .add("title", title)
@@ -78,7 +46,7 @@ public class ManagementResource {
                     .add("image_url", imageUrl != null ? imageUrl : "")
                     .add("renotify", renotify)
                     .add("silent", silent)
-                    .add("trigger_id", triggerId != null ? triggerId : "")
+                    .add("trigger_id", triggerId)
                     .build();
 
             if (findExisting("notifications", notification) != null) {
@@ -95,19 +63,18 @@ public class ManagementResource {
             String respbody = resp.readEntity(String.class).trim();
             int notificationId = Integer.parseInt(respbody);
 
-
-            for (String key : json.keySet()) {
-                if (key.startsWith("action_") && json.getBoolean(key)) {
-                    int actionId = Integer.parseInt(key.substring(7));
-                
-                    JsonObject notifAction = Json.createObjectBuilder()
-                            .add("notification_id", notificationId)
-                            .add("action_id", actionId)
-                            .build();
-                
-                    final String notificationActionsPostUrl = HttpService.SmartDataRecordsApi
+            final String notificationActionsPostUrl = HttpService.SmartDataRecordsApi
                             + "notification_actions"
                             + HttpService.StorageGamification;
+            JsonArray actions = json.getJsonArray("actions");
+            if (actions != null) {
+                for (int i = 0; i < actions.size(); i++) {
+                    String actionStr = actions.getString(i);  
+                    int actionId = Integer.parseInt(actionStr);
+                    JsonObject notifAction = Json.createObjectBuilder()
+                        .add("notification_id", notificationId)
+                        .add("action_id", actionId)
+                        .build();
                     HttpService.post(notificationActionsPostUrl, notifAction);
                 }
             }
@@ -146,9 +113,10 @@ public class ManagementResource {
                 builder.add("cron", scheduleCron);
             }
 
-            if (scheduleTimestamp != null)
+            if (scheduleTimestamp != null) {
                 builder.add("time_once", scheduleTimestamp);
-
+            }
+                
             JsonObject trigger = builder.build();
             
             final String triggerPostUrl = HttpService.SmartDataRecordsApi

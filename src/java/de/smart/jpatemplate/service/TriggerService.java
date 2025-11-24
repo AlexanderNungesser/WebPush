@@ -31,7 +31,7 @@ public class TriggerService {
     private static final CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ));
         
     private static final DateTimeFormatter fmt = new DateTimeFormatterBuilder()
-            .appendPattern("yyyy-MM-dd'T'HH:mm")
+            .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
             .optionalStart()
             .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
             .optionalEnd()

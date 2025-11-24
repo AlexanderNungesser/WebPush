@@ -36,5 +36,4 @@ public class ApplicationConfig extends Application {
         resources.add(de.smart.jpatemplate.rest.TemplateResource.class);
         resources.add(de.smart.jpatemplate.rest.WebhookResource.class);
     }
-    
 }
