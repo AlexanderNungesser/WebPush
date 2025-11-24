@@ -169,7 +169,7 @@ public class TriggerService {
         if (startJobResp.getStatus() != 200) {
             return new SimpleResponse(startJobResp.getStatus(), startJobResp.readEntity(String.class));
         }
-
+        System.out.println(""+startJobResp.readEntity(String.class));
         return new SimpleResponse(startJobResp.getStatus(),
                 Json.createObjectBuilder()
                         .add(HttpService.DataJobs, Json.createReader(new StringReader(jobBody.toString())).readObject())
