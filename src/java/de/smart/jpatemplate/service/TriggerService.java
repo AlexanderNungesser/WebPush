@@ -13,7 +13,6 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import java.io.StringReader;
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -28,8 +27,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class TriggerService {
+
     private static final CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ));
-        
+
     private static final DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
             .optionalStart()
@@ -97,32 +97,11 @@ public class TriggerService {
 
         return sortedTriggers;
     }
-    
-    public static boolean jobAlreadyExists(TriggerResult trigger) {
-        final String jobParamsUrl = HttpService.SmartDataRecordsApi
-                + HttpService.DataJobsParams
-                + HttpService.StorageSmartmonitoring
-                + "&filter=key,eq,trigger_id"
-                + "&filter=value,eq," + trigger.id();
-        
-        SimpleResponse jobParamsResp = HttpService.get(jobParamsUrl);
-        if (jobParamsResp.getStatus() != 200) {
-            return true;
-        }
-        String respText = jobParamsResp.readEntity(String.class);
-        
-        JsonObject root;
-        try (JsonReader reader = Json.createReader(new StringReader(respText))) {
-            root = reader.readObject();
-        }
-        JsonArray scheduledtriggers = root.getJsonArray("records");
 
-        if (scheduledtriggers == null || scheduledtriggers.isEmpty()) {
-            return false;
-        }
-        return true;
+    public static boolean jobAlreadyExists(TriggerResult trigger) {
+        return (0 != getJobId(trigger.id()));
     }
-    
+
     public static SimpleResponse createJobForTrigger(TriggerResult tr) {
         final String createJobUrl = HttpService.SmartDataRecordsApi
                 + HttpService.DataJobs
@@ -147,7 +126,7 @@ public class TriggerService {
         final String jobParamsUrl = HttpService.SmartDataRecordsApi
                 + HttpService.DataJobsParams
                 + HttpService.StorageSmartmonitoring;
-        
+
         JsonObject paramsBody = Json.createObjectBuilder()
                 .add("key", "trigger_id")
                 .add("value", tr.id())
@@ -159,7 +138,7 @@ public class TriggerService {
         if (jobParamsResp.getStatus() != 201) {
             return new SimpleResponse(jobParamsResp.getStatus(), jobParamsResp.readEntity(String.class));
         }
-        
+
         String startJobURL = HttpService.SmartDataJobsApi
                 + "&" + HttpService.StorageSmartmonitoring.substring(1)
                 + "&collection=" + HttpService.DataJobs
@@ -169,12 +148,67 @@ public class TriggerService {
         if (startJobResp.getStatus() != 200) {
             return new SimpleResponse(startJobResp.getStatus(), startJobResp.readEntity(String.class));
         }
-        System.out.println(""+startJobResp.readEntity(String.class));
+        System.out.println("" + startJobResp.readEntity(String.class));
         return new SimpleResponse(startJobResp.getStatus(),
                 Json.createObjectBuilder()
                         .add(HttpService.DataJobs, Json.createReader(new StringReader(jobBody.toString())).readObject())
                         .add(HttpService.DataJobsParams, Json.createReader(new StringReader(paramsBody.toString())).readObject())
                         .build().toString());
+    }
+
+    public static SimpleResponse deleteTrigger(JsonObject payload) {
+
+        int triggerId = payload.getInt("id");
+
+        final String deleteTriggerURL = HttpService.SmartDataRecordsApi
+                + "triggers"
+                + "/" + triggerId
+                + HttpService.StorageGamification;
+
+        SimpleResponse deleteTriggerResp = HttpService.delete(deleteTriggerURL);
+
+        if (deleteTriggerResp.getStatus() != 200) {
+            return new SimpleResponse(deleteTriggerResp.getStatus(), deleteTriggerResp.readEntity(String.class));
+        }
+
+        int dataJobId = getJobId(triggerId);
+
+        final String deleteJobURL = HttpService.SmartDataRecordsApi
+                + HttpService.DataJobs
+                + "/" + dataJobId
+                + HttpService.StorageGamification;
+
+        SimpleResponse deleteJobResp = HttpService.delete(deleteJobURL);
+
+        if (deleteJobResp.getStatus() != 200) {
+            return new SimpleResponse(deleteJobResp.getStatus(), deleteJobResp.readEntity(String.class));
+        }
+
+        return new SimpleResponse(deleteJobResp.getStatus(),
+                Json.createObjectBuilder()
+                        .add("trigger_id", triggerId)
+                        .add("datajob_id", dataJobId)
+                        .build().toString());
+    }
+
+    private static int getJobId(int triggerId) {
+        final String jobParamsUrl = HttpService.SmartDataRecordsApi
+                + HttpService.DataJobsParams
+                + HttpService.StorageSmartmonitoring
+                + "&filter=key,eq,trigger_id"
+                + "&filter=value,eq," + triggerId;
+
+        SimpleResponse jobParamsResp = HttpService.get(jobParamsUrl);
+        if (jobParamsResp.getStatus() != 200) {
+            return 0;
+        }
+        String respText = jobParamsResp.readEntity(String.class);
+
+        JsonObject root;
+        try (JsonReader reader = Json.createReader(new StringReader(respText))) {
+            root = reader.readObject();
+        }
+        return root.getJsonArray("records").getJsonObject(0).getInt("datajob_id", 0);
     }
 
     public static Optional<TriggerResult> parseCron(String cronString, ZonedDateTime reference, int triggerId) {
@@ -191,6 +225,7 @@ public class TriggerService {
             return Optional.empty();
         }
     }
+
     public static boolean isValidCron(String cronString) {
         try {
             Cron cron = parser.parse(cronString);
