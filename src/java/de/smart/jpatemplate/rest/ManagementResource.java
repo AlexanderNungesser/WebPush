@@ -55,17 +55,10 @@ public class ManagementResource {
                         .build();
             }
 
-            final String notificationPostUrl = HttpService.SmartDataRecordsApi
-                    + "notifications"
-                    + HttpService.StorageGamification;
-            SimpleResponse resp = HttpService.post(notificationPostUrl, notification);        
-
+            SimpleResponse resp = post("notifications", notification);        
             String respbody = resp.readEntity(String.class).trim();
             int notificationId = Integer.parseInt(respbody);
 
-            final String notificationActionsPostUrl = HttpService.SmartDataRecordsApi
-                            + "notification_actions"
-                            + HttpService.StorageGamification;
             JsonArray actions = json.getJsonArray("actions");
             if (actions != null) {
                 for (int i = 0; i < actions.size(); i++) {
@@ -75,7 +68,7 @@ public class ManagementResource {
                         .add("notification_id", notificationId)
                         .add("action_id", actionId)
                         .build();
-                    HttpService.post(notificationActionsPostUrl, notifAction);
+                    post("notification_actions", notifAction);
                 }
             }
 
@@ -120,54 +113,11 @@ public class ManagementResource {
                 
             JsonObject trigger = builder.build();
             
-            final String triggerPostUrl = HttpService.SmartDataRecordsApi
-                    + "triggers"
-                    + HttpService.StorageGamification;
-            SimpleResponse triggerresp = HttpService.post(triggerPostUrl, trigger);
-
+            SimpleResponse triggerresp = post("triggers", trigger);
             String trigrespbody = triggerresp.readEntity(String.class).trim();
             int triggerId = Integer.parseInt(trigrespbody);
 
-            for (String key : json.keySet()) {
-                if (key.startsWith("data_field_")) {
-                    String index = key.substring("data_field_".length());
-                    String dataField = json.getString(key);
-                    String operator = json.containsKey("operator_" + index) ? json.getString("operator_" + index) : "==";
-                    BigDecimal threshold = new BigDecimal(json.getString("threshold_" + index, "0"));
-                    
-                    JsonObject condition = Json .createObjectBuilder()
-                            .add("data_field", dataField)
-                            .add("operator", operator)
-                            .add("threshold", threshold)
-                            .build();
-                    
-                    JsonObject existingCondition = findExisting("conditions", condition);
-                    int conditionId;
-                    if (existingCondition == null) {
-                        final String conditionPostUrl = HttpService.SmartDataRecordsApi
-                                + "conditions"
-                                + HttpService.StorageGamification;
-                        SimpleResponse conditionresp = HttpService.post(conditionPostUrl, condition);
-
-                        String condrespbody = conditionresp.readEntity(String.class).trim();
-                        conditionId = Integer.parseInt(condrespbody);
-                    } else {
-                        conditionId = existingCondition.getInt("id");
-                    }
-
-                    System.out.println("Linking Condition ID " + conditionId + " to Trigger ID " + triggerId);
-                
-                    JsonObject triggerCond = Json.createObjectBuilder()
-                            .add("trigger_id", triggerId)
-                            .add("condition_id", conditionId)
-                            .build();
-                
-                    final String triggerConditionsPostUrl = HttpService.SmartDataRecordsApi
-                            + "trigger_conditions"
-                            + HttpService.StorageGamification;
-                    HttpService.post(triggerConditionsPostUrl, triggerCond);
-                }
-            }
+            createConditions(json, triggerId);
             
             TriggerResult tr = TriggerService.getTrigger(triggerId, trigger);
             SimpleResponse res = TriggerService.createJobForTrigger(tr);
@@ -176,6 +126,40 @@ public class ManagementResource {
 
         } catch (Exception e) {
             return Response.serverError().entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+        }
+    }
+
+    public void createConditions(JsonObject json, int triggerId) {
+        for (String key : json.keySet()) {
+            if (key.startsWith("data_field_")) {
+                String index = key.substring("data_field_".length());
+                String dataField = json.getString(key);
+                String operator = json.containsKey("operator_" + index) ? json.getString("operator_" + index) : "==";
+                BigDecimal threshold = new BigDecimal(json.getString("threshold_" + index, "0"));
+                
+                JsonObject condition = Json .createObjectBuilder()
+                        .add("data_field", dataField)
+                        .add("operator", operator)
+                        .add("threshold", threshold)
+                        .build();
+                
+                JsonObject existingCondition = findExisting("conditions", condition);
+                int conditionId;
+                if (existingCondition == null) {
+                    SimpleResponse conditionresp = post("conditions", condition);
+                    String condrespbody = conditionresp.readEntity(String.class).trim();
+                    conditionId = Integer.parseInt(condrespbody);
+                } else {
+                    conditionId = existingCondition.getInt("id");
+                }
+            
+                JsonObject triggerCond = Json.createObjectBuilder()
+                        .add("trigger_id", triggerId)
+                        .add("condition_id", conditionId)
+                        .build();
+            
+                post("trigger_conditions", triggerCond);
+            }
         }
     }
 
@@ -195,7 +179,6 @@ public class ManagementResource {
             try (JsonReader reader = Json.createReader(new StringReader(body))) {
 
                 JsonObject root = reader.readObject();
-                System.out.println("findExisting response: " + root.toString());
                 if (!root.containsKey("records")) return null;
 
                 var arr = root.getJsonArray("records");
@@ -234,6 +217,11 @@ public class ManagementResource {
         }
 
         return null;
+    }
+
+    public SimpleResponse post(String target, JsonObject json) {
+        String url = HttpService.SmartDataRecordsApi + target + HttpService.StorageGamification;
+        return HttpService.post(url, json);
     }
 
 }
