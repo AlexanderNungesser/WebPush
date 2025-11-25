@@ -16,9 +16,9 @@ public class MessagePayload {
     public Map<String, Object> data;
     public String title;
     public String badge;
-    public String image;
+    public String image_url;
     public String body;
-    public String icon;
+    public String icon_url;
     public String lang;
     public String tag;
     public boolean requireInteraction;
