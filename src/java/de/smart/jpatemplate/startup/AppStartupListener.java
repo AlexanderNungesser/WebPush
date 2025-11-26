@@ -101,6 +101,7 @@ public class AppStartupListener implements ServletContextListener {
                 SimpleResponse registerJobResp = TriggerService.registerJob(TriggerService.getJobId(trigger.id()));
 
                 if (registerJobResp.getStatus() != 200) {
+                    resp.add(Json.createReader(new StringReader(registerJobResp.readEntity(String.class))).readObject());
                     return;
                 }
                 continue;
