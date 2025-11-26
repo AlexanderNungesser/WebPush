@@ -139,21 +139,26 @@ public class TriggerService {
             return new SimpleResponse(jobParamsResp.getStatus(), jobParamsResp.readEntity(String.class));
         }
 
+        SimpleResponse registerJobResp = registerJob(datajobId);
+        
+        if (registerJobResp.getStatus() != 200) {
+            return new SimpleResponse(registerJobResp.getStatus(), registerJobResp.readEntity(String.class));
+        }
+        
+        return new SimpleResponse(registerJobResp.getStatus(),
+                Json.createObjectBuilder()
+                        .add(HttpService.DataJobs, Json.createReader(new StringReader(jobBody.toString())).readObject())
+                        .add(HttpService.DataJobsParams, Json.createReader(new StringReader(paramsBody.toString())).readObject())
+                        .build().toString());
+    }
+    
+    public static SimpleResponse registerJob(int datajobId){
         String startJobURL = HttpService.SmartDataJobsApi
                 + "&" + HttpService.StorageSmartmonitoring.substring(1)
                 + "&collection=" + HttpService.DataJobs
                 + "&id=" + datajobId;
 
-        SimpleResponse startJobResp = HttpService.get(startJobURL);
-        if (startJobResp.getStatus() != 200) {
-            return new SimpleResponse(startJobResp.getStatus(), startJobResp.readEntity(String.class));
-        }
-        System.out.println("" + startJobResp.readEntity(String.class));
-        return new SimpleResponse(startJobResp.getStatus(),
-                Json.createObjectBuilder()
-                        .add(HttpService.DataJobs, Json.createReader(new StringReader(jobBody.toString())).readObject())
-                        .add(HttpService.DataJobsParams, Json.createReader(new StringReader(paramsBody.toString())).readObject())
-                        .build().toString());
+        return HttpService.get(startJobURL);        
     }
 
     public static SimpleResponse deleteTrigger(JsonObject payload) {
@@ -191,7 +196,7 @@ public class TriggerService {
                         .build().toString());
     }
 
-    private static int getJobId(int triggerId) {
+    public static int getJobId(int triggerId) {
         final String jobParamsUrl = HttpService.SmartDataRecordsApi
                 + HttpService.DataJobsParams
                 + HttpService.StorageSmartmonitoring
