@@ -140,25 +140,25 @@ public class TriggerService {
         }
 
         SimpleResponse registerJobResp = registerJob(datajobId);
-        
+
         if (registerJobResp.getStatus() != 200) {
             return new SimpleResponse(registerJobResp.getStatus(), registerJobResp.readEntity(String.class));
         }
-        
+
         return new SimpleResponse(registerJobResp.getStatus(),
                 Json.createObjectBuilder()
                         .add(HttpService.DataJobs, Json.createReader(new StringReader(jobBody.toString())).readObject())
                         .add(HttpService.DataJobsParams, Json.createReader(new StringReader(paramsBody.toString())).readObject())
                         .build().toString());
     }
-    
-    public static SimpleResponse registerJob(int datajobId){
+
+    public static SimpleResponse registerJob(int datajobId) {
         String startJobURL = HttpService.SmartDataJobsApi
                 + "&" + HttpService.StorageSmartmonitoring.substring(1)
                 + "&collection=" + HttpService.DataJobs
                 + "&id=" + datajobId;
 
-        return HttpService.get(startJobURL);        
+        return HttpService.get(startJobURL);
     }
 
     public static SimpleResponse deleteTrigger(JsonObject payload) {
@@ -213,7 +213,12 @@ public class TriggerService {
         try (JsonReader reader = Json.createReader(new StringReader(respText))) {
             root = reader.readObject();
         }
-        return root.getJsonArray("records").getJsonObject(0).getInt("datajob_id", 0);
+
+        JsonArray records = root.getJsonArray("records");
+        if (records == null || records.isEmpty()) {
+            return 0;
+        }
+        return records.getJsonObject(0).getInt("datajob_id", 0);
     }
 
     public static Optional<TriggerResult> parseCron(String cronString, ZonedDateTime reference, int triggerId) {
