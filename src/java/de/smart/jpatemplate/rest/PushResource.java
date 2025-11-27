@@ -55,9 +55,10 @@ public class PushResource {
                     .build();
         }
         try {
-            client.save(subscription);
+            int id = client.save(subscription);
             return Response.status(Response.Status.CREATED)
                     .entity(Map.of("status", "subscribed"))
+                    .entity(Map.of("id", id))
                     .build();
         } catch (Exception e) {
             return Response.serverError()

@@ -25,7 +25,7 @@ public class SubscriptionApiClient {
     private final Client client = ClientBuilder.newClient();
     private final Jsonb builder = JsonbBuilder.create();
 
-    public void save(PushSubscription subscription) {
+    public int save(PushSubscription subscription) {
         Response response = null;
         try {
             response = client
@@ -36,7 +36,9 @@ public class SubscriptionApiClient {
             JsonArray array = getJsonArray(response);
 
             if (!array.isEmpty()) {
-                return;
+                JsonObject first = array.getJsonObject(0);
+                int id = first.getInt("id");
+                return id;
             }
             
             String json = builder.toJson(subscription);
@@ -51,6 +53,11 @@ public class SubscriptionApiClient {
 
         if (response.getStatus() >= 400) {
             throw new RuntimeException("Failed to save subscription: " + response.readEntity(String.class));
+        }
+        else {
+            JsonValue value = getJsonValue(response);
+            int id = Integer.parseInt(value.toString());
+            return id;
         }
     }
 
@@ -108,5 +115,11 @@ public class SubscriptionApiClient {
         String rawJson = response.readEntity(String.class);
         JsonObject json = Json.createReader(new StringReader(rawJson)).readObject();
         return json.getJsonArray("records");
+    }
+    
+    private JsonValue getJsonValue(Response response){
+        String rawJson = response.readEntity(String.class);
+        JsonValue json = Json.createReader(new StringReader(rawJson)).readValue();
+        return json;
     }
 }
