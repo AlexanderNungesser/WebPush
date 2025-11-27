@@ -107,7 +107,11 @@ public class AppStartupListener implements ServletContextListener {
                 continue;
             }
             SimpleResponse r = TriggerService.createJobForTrigger(trigger);
-            resp.add(Json.createReader(new StringReader(r.readEntity(String.class))).readObject());
+            if(r.getStatus() != 200) {
+                resp.add(Json.createObjectBuilder().add("error", "could not create Job for trigger " + trigger.id()));
+            } else {
+                resp.add(Json.createReader(new StringReader(r.readEntity(String.class))).readObject());
+            }
         }
 
         System.out.println(resp.build());
