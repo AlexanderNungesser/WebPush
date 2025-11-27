@@ -98,12 +98,12 @@ public class AppStartupListener implements ServletContextListener {
 
         for (TriggerResult trigger : triggers) {
             if (TriggerService.jobAlreadyExists(trigger)) {
-                SimpleResponse registerJobResp = TriggerService.registerJob(TriggerService.getJobId(trigger.id()));
+                // SimpleResponse registerJobResp = TriggerService.registerJob(TriggerService.getJobId(trigger.id()));
 
-                if (registerJobResp.getStatus() != 200) {
-                    resp.add(Json.createReader(new StringReader(registerJobResp.readEntity(String.class))).readObject());
-                    return;
-                }
+                // if (registerJobResp.getStatus() != 200) {
+                //    resp.add(Json.createReader(new StringReader(registerJobResp.readEntity(String.class))).readObject());
+                //    return;
+                // }
                 continue;
             }
             SimpleResponse r = TriggerService.createJobForTrigger(trigger);
