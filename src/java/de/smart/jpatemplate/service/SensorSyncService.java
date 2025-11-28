@@ -33,7 +33,7 @@ public class SensorSyncService {
         final int ootype_id = json.getInt("ootype_id", 0);
         
         //only mobile sensors
-        if(ootype_id != 3) {
+        if(ootype_id != 3 && ootype_id != 4) {
             return;
         }
         
@@ -69,7 +69,7 @@ public class SensorSyncService {
     @param collection: String of the data-table (smartmonitoring.<data-table>)
     */
     private static int getGroupId(String name, String collection) {
-        String targetURL = HttpService.SmartDataRecordsApi + "groups" + HttpService.StorageGamification;
+        String targetURL = HttpService.SmartDataRecordsApi + "group" + HttpService.StorageGamification;
         
         try{
             SimpleResponse response = HttpService.get(targetURL);
@@ -109,7 +109,7 @@ public class SensorSyncService {
                     .add("data_table", collection);
         JsonObject groupJson = groupBuilder.build();
 
-        final String groupURL = HttpService.SmartDataRecordsApi + "groups" + HttpService.StorageGamification;
+        final String groupURL = HttpService.SmartDataRecordsApi + "group" + HttpService.StorageGamification;
         SimpleResponse resp = HttpService.post(groupURL, groupJson);
         if(resp.getStatus() != 201) {
             System.err.println("WebPush - Could not create a new group for sensor '" + name + "'. HTTP: " + resp.getStatus());

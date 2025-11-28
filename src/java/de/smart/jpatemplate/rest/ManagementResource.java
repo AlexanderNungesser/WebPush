@@ -55,7 +55,7 @@ public class ManagementResource {
                         .build();
             }
 
-            SimpleResponse resp = post("notifications", notification);        
+            SimpleResponse resp = post("notification", notification);        
             String respbody = resp.readEntity(String.class).trim();
             int notificationId = Integer.parseInt(respbody);
 
@@ -68,7 +68,7 @@ public class ManagementResource {
                         .add("notification_id", notificationId)
                         .add("action_id", actionId)
                         .build();
-                    post("notification_actions", notifAction);
+                    post("notification_action", notifAction);
                 }
             }
 
@@ -113,7 +113,7 @@ public class ManagementResource {
                 
             JsonObject trigger = builder.build();
             
-            SimpleResponse triggerresp = post("triggers", trigger);
+            SimpleResponse triggerresp = post("trigger", trigger);
             String trigrespbody = triggerresp.readEntity(String.class).trim();
             int triggerId = Integer.parseInt(trigrespbody);
 
@@ -158,7 +158,7 @@ public class ManagementResource {
                         .add("condition_id", conditionId)
                         .build();
             
-                post("trigger_conditions", triggerCond);
+                post("trigger_condition", triggerCond);
             }
         }
     }
