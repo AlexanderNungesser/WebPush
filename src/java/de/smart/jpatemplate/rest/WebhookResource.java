@@ -76,28 +76,6 @@ public class WebhookResource {
     
     
     // ───────────────────────────────────────────────────────────────
-    // Webhooks: changes in Trigger-table -> trigger Job-Management
-    // ───────────────────────────────────────────────────────────────
-    @POST
-    @Path("/trigger_post")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response reactOnNewTrigger(String payload) {
-        System.out.println("=== Webhook active: trigger_post ===");
-        System.out.println("Payload: " + payload);
-        return Response.ok().build();
-    }
-    
-    @DELETE
-    @Path("/trigger_delete")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response reactOnTriggerChange(String payload) {
-        System.out.println("=== Webhook active: trigger-delete ===");
-        System.out.println("Payload: " + payload);
-        return Response.ok().build();
-    }
-    
-    
-    // ───────────────────────────────────────────────────────────────
     // Webhook: new Data in Sensor-Table
     // ───────────────────────────────────────────────────────────────
     @POST
