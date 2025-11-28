@@ -108,7 +108,8 @@ public class TriggerService {
                 + HttpService.StorageSmartmonitoring;
 
         JsonObjectBuilder jsonJobBody = Json.createObjectBuilder()
-                .add("name", "sendNotification")
+                .add("name", "timeTrigger_" + tr.id())
+                .add("desc","Job for time-based Trigger")
                 .add("action", "SendNotification")
                 .add("active", true)
                 .add("start", tr.next().toLocalDateTime().format(fmt));
