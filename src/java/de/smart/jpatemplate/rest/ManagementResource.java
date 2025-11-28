@@ -49,7 +49,7 @@ public class ManagementResource {
                     .add("trigger_id", triggerId)
                     .build();
 
-            if (findExisting("notifications", notification) != null) {
+            if (findExisting("notification", notification) != null) {
                 return Response.status(Response.Status.CONFLICT)
                         .entity("{\"error\":\"Notification already exists.\"}")
                         .build();
