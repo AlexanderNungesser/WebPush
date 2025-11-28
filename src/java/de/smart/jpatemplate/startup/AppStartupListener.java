@@ -68,23 +68,6 @@ public class AppStartupListener implements ServletContextListener {
                     null,
                     "tbl Observe-Objects");
 
-            /* still in use?
-            PropertiesWebhookService.addWebhook("Triggers", 
-                    "GAMIFICATION", 
-                    WebhookAction.POST, 
-                    HttpService.WebPushResourceApi + "webhook/" + "trigger_post",
-                    "RECORDS", 
-                    null, 
-                    "React on new Triggers");
-            
-            PropertiesWebhookService.addWebhook("Triggers", 
-                    "GAMIFICATION", 
-                    WebhookAction.DELETE, 
-                    HttpService.WebPushResourceApi + "webhook/" + "trigger_delete",
-                    "RECORDS", 
-                    null, 
-                    "React on deleted Triggers");
-             */
         } catch (IOException e) {
             //do nothing
         }
