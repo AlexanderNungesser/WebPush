@@ -19,7 +19,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 
 @Path("/admin")
-public class ManagementResource {
+public class AdminResource {
     
     // ───────────────────────────────────────────────────────────────
     // Create Notification Endpoint
@@ -130,23 +130,24 @@ public class ManagementResource {
     }
 
     public void createConditions(JsonObject json, int triggerId) {
+        System.out.println(json);
         for (String key : json.keySet()) {
             if (key.startsWith("data_field_")) {
                 String index = key.substring("data_field_".length());
-                String dataField = json.getString(key);
+                int dataField = json.getInt(key);
                 String operator = json.containsKey("operator_" + index) ? json.getString("operator_" + index) : "==";
-                BigDecimal threshold = new BigDecimal(json.getString("threshold_" + index, "0"));
+                BigDecimal threshold = json.getJsonNumber("threshold_" + index).bigDecimalValue();
                 
                 JsonObject condition = Json .createObjectBuilder()
-                        .add("data_field", dataField)
+                        .add("type_id", dataField)
                         .add("operator", operator)
                         .add("threshold", threshold)
                         .build();
                 
-                JsonObject existingCondition = findExisting("conditions", condition);
+                JsonObject existingCondition = findExisting("condition", condition);
                 int conditionId;
                 if (existingCondition == null) {
-                    SimpleResponse conditionresp = post("conditions", condition);
+                    SimpleResponse conditionresp = post("condition", condition);
                     String condrespbody = conditionresp.readEntity(String.class).trim();
                     conditionId = Integer.parseInt(condrespbody);
                 } else {
