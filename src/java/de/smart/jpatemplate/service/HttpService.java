@@ -21,6 +21,7 @@ public class HttpService {
 
     private static final HttpClient http = HttpClient.newHttpClient();
     
+    public static final String SmartDataCollectionApi = "http://localhost:8080/SmartDataAirquality/smartdata/collection/";
     public static final String SmartDataRecordsApi = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
     public static final String WebPushResourceApi = "http://localhost:8080/WebPush/webpush/";
     public static final String SmartDataJobsApi = "http://localhost:8080/SmartDataJobs/smartdatajobs/jobexecution/start?smartdataurl=/SmartDataAirquality";
