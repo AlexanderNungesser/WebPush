@@ -130,39 +130,85 @@ public class AdminResource {
     }
 
     public void createConditions(JsonObject json, int triggerId) {
-        System.out.println(json);
         for (String key : json.keySet()) {
-            if (key.startsWith("data_field_")) {
-                String index = key.substring("data_field_".length());
-                int dataField = json.getInt(key);
-                String operator = json.containsKey("operator_" + index) ? json.getString("operator_" + index) : "==";
-                BigDecimal threshold = json.getJsonNumber("threshold_" + index).bigDecimalValue();
-                
-                JsonObject condition = Json .createObjectBuilder()
-                        .add("type_id", dataField)
-                        .add("operator", operator)
-                        .add("threshold", threshold)
-                        .build();
-                
-                JsonObject existingCondition = findExisting("condition", condition);
-                int conditionId;
-                if (existingCondition == null) {
-                    SimpleResponse conditionresp = post("condition", condition);
-                    String condrespbody = conditionresp.readEntity(String.class).trim();
-                    conditionId = Integer.parseInt(condrespbody);
-                } else {
-                    conditionId = existingCondition.getInt("id");
-                }
-            
-                JsonObject triggerCond = Json.createObjectBuilder()
-                        .add("trigger_id", triggerId)
-                        .add("condition_id", conditionId)
-                        .build();
-            
-                post("trigger_condition", triggerCond);
+            if (!key.startsWith("data_field_")) continue;
+
+            String index = key.substring("data_field_".length());
+
+            int dataField = json.getInt("data_field_" + index);
+            String operator = json.getString("operator_" + index, "==");
+            BigDecimal threshold = json.getJsonNumber("threshold_" + index).bigDecimalValue();
+
+            int periodId = createOrGetPeriod(json, index);
+
+            JsonObject condition = Json.createObjectBuilder()
+                    .add("type_id", dataField)
+                    .add("period_id", periodId)
+                    .add("operator", operator)
+                    .add("threshold", threshold)
+                    .build();
+
+            JsonObject existingCondition = findExisting("condition", condition);
+            int conditionId;
+
+            if (existingCondition == null) {
+                SimpleResponse condResp = post("condition", condition);
+                conditionId = Integer.parseInt(condResp.readEntity(String.class).trim());
+            } else {
+                conditionId = existingCondition.getInt("id");
             }
+
+            JsonObject triggerCond = Json.createObjectBuilder()
+                    .add("trigger_id", triggerId)
+                    .add("condition_id", conditionId)
+                    .build();
+
+            post("trigger_condition", triggerCond);
         }
     }
+
+    private int createOrGetPeriod(JsonObject json, String index) {
+        String periodType = json.getString("period_" + index, "all");
+
+        JsonObjectBuilder pb = Json.createObjectBuilder()
+                .add("type", periodType);
+
+        switch (periodType) {
+            case "date":
+                pb.add("period_date", json.getString("period_date_" + index, ""));
+                break;
+                
+            case "daily_time":
+                String startStr = json.getString("daily_time_start_" + index, "00:00");
+                String endStr   = json.getString("daily_time_end_" + index, "23:59");
+                
+                String currentDate = java.time.LocalDate.now().toString();
+                
+                if (startStr.length() == 5) startStr += ":00";
+                if (endStr.length() == 5)   endStr   += ":00";
+                
+                pb.add("period_start", currentDate + " " + startStr);
+                pb.add("period_end", currentDate + " " + endStr);
+                break;
+                
+            case "range":
+                pb.add("period_start", json.getString("range_start_" + index, ""));
+                pb.add("period_end", json.getString("range_end_" + index, ""));
+                break;
+        }
+
+
+        JsonObject periodObj = pb.build();
+
+        JsonObject existing = findExisting("condition_period", periodObj);
+        if (existing != null) {
+            return existing.getInt("id");
+        }
+
+        SimpleResponse resp = post("condition_period", periodObj);
+        return Integer.parseInt(resp.readEntity(String.class).trim());
+    }
+
 
     public static JsonObject findExisting(String resource, JsonObject filterJson) {
         try {
