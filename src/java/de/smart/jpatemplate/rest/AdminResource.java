@@ -166,32 +166,17 @@ public class AdminResource {
     }
 
     private JsonObject AddPeriod(JsonObject json, String index, JsonObjectBuilder conditionBuilder) {
-        String type = json.getString("period_" + index, "all");
-        JsonObject periodType = Json.createObjectBuilder()
-                    .add("type", type)
-                    .build();
-
-        JsonObject existingPeriodtype = findExisting("condition_period", periodType);
-        int periodId;
-
-        if (existingPeriodtype == null) {
-            SimpleResponse periodResp = post("condition_period", periodType);
-            periodId = Integer.parseInt(periodResp.readEntity(String.class).trim());
-        } else {
-            periodId = existingPeriodtype.getInt("id");
-        }
-
+        int periodId = json.getInt("period_" + index, 1);
         conditionBuilder.add("period_id", periodId);
-
-        switch (type) {
-            case "date":
+        switch (periodId) {
+            case 7:
                 conditionBuilder.add("date_start", json.getString("period_date_" + index, ""));
                 break;
-            case "time":
+            case 8:
                 conditionBuilder.add("time_start", json.getString("daily_time_start_" + index));
                 conditionBuilder.add("time_end", json.getString("daily_time_end_" + index));
                 break;
-            case "range":
+            case 9:
                 String rangeStart = json.getString("range_start_" + index, "");
                 String rangeEnd   = json.getString("range_end_" + index, "");
 
