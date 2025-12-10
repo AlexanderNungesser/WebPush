@@ -139,14 +139,12 @@ public class AdminResource {
             String operator = json.getString("operator_" + index, "==");
             BigDecimal threshold = json.getJsonNumber("threshold_" + index).bigDecimalValue();
 
-            int periodId = createOrGetPeriod(json, index);
-
-            JsonObject condition = Json.createObjectBuilder()
+            JsonObjectBuilder conditionBuilder = Json.createObjectBuilder()
                     .add("type_id", dataField)
-                    .add("period_id", periodId)
                     .add("operator", operator)
-                    .add("threshold", threshold)
-                    .build();
+                    .add("threshold", threshold);
+
+            JsonObject condition = AddPeriod(json, index, conditionBuilder);
 
             JsonObject existingCondition = findExisting("condition", condition);
             int conditionId;
@@ -167,46 +165,60 @@ public class AdminResource {
         }
     }
 
-    private int createOrGetPeriod(JsonObject json, String index) {
-        String periodType = json.getString("period_" + index, "all");
+    private JsonObject AddPeriod(JsonObject json, String index, JsonObjectBuilder conditionBuilder) {
+        String type = json.getString("period_" + index, "all");
+        JsonObject periodType = Json.createObjectBuilder()
+                    .add("type", type)
+                    .build();
 
-        JsonObjectBuilder pb = Json.createObjectBuilder()
-                .add("type", periodType);
+        JsonObject existingPeriodtype = findExisting("condition_period", periodType);
+        int periodId;
 
-        switch (periodType) {
+        if (existingPeriodtype == null) {
+            SimpleResponse periodResp = post("condition_period", periodType);
+            periodId = Integer.parseInt(periodResp.readEntity(String.class).trim());
+        } else {
+            periodId = existingPeriodtype.getInt("id");
+        }
+
+        conditionBuilder.add("period_id", periodId);
+
+        switch (type) {
             case "date":
-                pb.add("period_date", json.getString("period_date_" + index, ""));
+                conditionBuilder.add("date_start", json.getString("period_date_" + index, ""));
                 break;
-                
-            case "daily_time":
-                String startStr = json.getString("daily_time_start_" + index, "00:00");
-                String endStr   = json.getString("daily_time_end_" + index, "23:59");
-                
-                String currentDate = java.time.LocalDate.now().toString();
-                
-                if (startStr.length() == 5) startStr += ":00";
-                if (endStr.length() == 5)   endStr   += ":00";
-                
-                pb.add("period_start", currentDate + " " + startStr);
-                pb.add("period_end", currentDate + " " + endStr);
+            case "time":
+                conditionBuilder.add("time_start", json.getString("daily_time_start_" + index));
+                conditionBuilder.add("time_end", json.getString("daily_time_end_" + index));
                 break;
-                
             case "range":
-                pb.add("period_start", json.getString("range_start_" + index, ""));
-                pb.add("period_end", json.getString("range_end_" + index, ""));
+                String rangeStart = json.getString("range_start_" + index, "");
+                String rangeEnd   = json.getString("range_end_" + index, "");
+
+                if (!rangeStart.isEmpty()) {
+                    String[] partsStart = rangeStart.split("T");
+                    String dateStart = partsStart[0];
+                    String timeStart = partsStart.length > 1 ? partsStart[1] : "00:00";
+                
+                    conditionBuilder.add("date_start", dateStart);
+                    conditionBuilder.add("time_start", timeStart);
+                }
+            
+                if (!rangeEnd.isEmpty()) {
+                    String[] partsEnd = rangeEnd.split("T");
+                    String dateEnd = partsEnd[0];
+                    String timeEnd = partsEnd.length > 1 ? partsEnd[1] : "00:00";
+                
+                    conditionBuilder.add("date_end", dateEnd);
+                    conditionBuilder.add("time_end", timeEnd);
+                }
                 break;
         }
 
 
-        JsonObject periodObj = pb.build();
+        JsonObject condition = conditionBuilder.build();
 
-        JsonObject existing = findExisting("condition_period", periodObj);
-        if (existing != null) {
-            return existing.getInt("id");
-        }
-
-        SimpleResponse resp = post("condition_period", periodObj);
-        return Integer.parseInt(resp.readEntity(String.class).trim());
+        return condition;
     }
 
 
