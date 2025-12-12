@@ -37,6 +37,14 @@ public class TriggerService {
             .optionalEnd()
             .toFormatter();
 
+    /**
+     * Get a <code>TriggerResult</code> with <code>triggerId</code> from a
+     * <code>payload</code>
+     *
+     * @param triggerId of the trigger
+     * @param payload of the trigger
+     * @return <code>TriggerResult</code> of the trigger
+     */
     public static TriggerResult getTrigger(int triggerId, JsonObject payload) {
 
         String cron = (payload.getJsonString("cron") != null)
@@ -62,6 +70,11 @@ public class TriggerService {
         return tr;
     }
 
+    /**
+     * Get <code>TriggerResult</code> of all schedueld triggers
+     *
+     * @return List of <code>TriggerResult</code>
+     */
     public static List<TriggerResult> getTriggers() {
         final String triggerGetUrl = HttpService.SmartDataRecordsApi
                 + "view_triggers_with_schedule"
@@ -93,15 +106,27 @@ public class TriggerService {
                 .sorted(Comparator.comparing(e -> e.next()))
                 .collect(Collectors.toList());
 
-        System.out.println("All: " + sortedTriggers);
-
         return sortedTriggers;
     }
 
+    /**
+     * Check if a job for a trigger already exists
+     *
+     * @param trigger that should be checked
+     * @return <code>true</code> if a job already exists, otherwise
+     * <code>false</code>
+     */
     public static boolean jobAlreadyExists(TriggerResult trigger) {
         return (0 != getJobId(trigger.id()));
     }
 
+    /**
+     * Create a job for a scheduled trigger defined in a
+     * <code>TriggerResult</code>
+     *
+     * @param tr <code>TriggerResult</code> of the trigger
+     * @return <code>SimpleResponse</code> of the creation process
+     */
     public static SimpleResponse createJobForTrigger(TriggerResult tr) {
         final String createJobUrl = HttpService.SmartDataRecordsApi
                 + HttpService.DataJobs
@@ -109,7 +134,7 @@ public class TriggerService {
 
         JsonObjectBuilder jsonJobBody = Json.createObjectBuilder()
                 .add("name", "timeTrigger_" + tr.id())
-                .add("desc","Job for time-based Trigger")
+                .add("desc", "Job for time-based Trigger")
                 .add("action", "SendNotification")
                 .add("active", true)
                 .add("start", tr.next().toLocalDateTime().format(fmt));
@@ -153,6 +178,13 @@ public class TriggerService {
                         .build().toString());
     }
 
+    /**
+     * Register a Job with <code>datajobId</code> to the <code>JobRunner</code>
+     * of SmartDataJobs by starting it
+     *
+     * @param datajobId of the job that should be registerd
+     * @return <code>SimpleResponse</code> of the register process
+     */
     public static SimpleResponse registerJob(int datajobId) {
         String startJobURL = HttpService.SmartDataJobsApi
                 + "&" + HttpService.StorageSmartmonitoring.substring(1)
@@ -162,6 +194,12 @@ public class TriggerService {
         return HttpService.get(startJobURL);
     }
 
+    /**
+     * Delete a trigger from the DB defined in a <code>payload</code>
+     *
+     * @param payload of the trigger
+     * @return <code>SimpleResponse</code> of the deletion process
+     */
     public static SimpleResponse deleteTrigger(JsonObject payload) {
 
         int triggerId = payload.getInt("id");
@@ -197,6 +235,12 @@ public class TriggerService {
                         .build().toString());
     }
 
+    /**
+     * Get the job id of a trigger's job via the <code>triggerId</code>
+     *
+     * @param triggerId of the job's trigger
+     * @return job id
+     */
     public static int getJobId(int triggerId) {
         final String jobParamsUrl = HttpService.SmartDataRecordsApi
                 + HttpService.DataJobsParams
@@ -222,6 +266,15 @@ public class TriggerService {
         return records.getJsonObject(0).getInt("datajob_id", 0);
     }
 
+    /**
+     * Parse a CRON-String with a <code>reference</code> time of a trigger with
+     * the <code>triggerId</code>
+     *
+     * @param cronString that should be parsed
+     * @param reference from which the next execution is calculated
+     * @param triggerId of the trigger
+     * @return <code>Optional</code> of <code>TriggerResult</code>
+     */
     public static Optional<TriggerResult> parseCron(String cronString, ZonedDateTime reference, int triggerId) {
         try {
             Cron cron = parser.parse(cronString);
@@ -237,6 +290,12 @@ public class TriggerService {
         }
     }
 
+    /**
+     * Check if a CRON-String is valid
+     *
+     * @param cronString that should be checked
+     * @return <code>true</code> if its valid, otherwise <code>false</code>
+     */
     public static boolean isValidCron(String cronString) {
         try {
             Cron cron = parser.parse(cronString);

@@ -132,7 +132,8 @@ public class SensorSyncService {
         groupId = Integer.parseInt(respbody);
         return groupId;
     }
-
+    
+    // Get the last Activity timestamp of a group from its sensor table
     private static String getLastActivity(String sensorTable) {
         String lastTsUrl = HttpService.SmartDataRecordsApi + sensorTable + HttpService.StorageSmartmonitoring + "&includes=ts" + "&order=ts,DESC" + "&size=1";
         SimpleResponse resp = HttpService.get(lastTsUrl);
@@ -144,7 +145,8 @@ public class SensorSyncService {
         }
         return records.getJsonObject(0).getString("ts");
     }
-
+    
+    // Checks if the given sensor table already exists
     private static boolean sensorTableExists(String sensorTable) {
         String checkUrl = HttpService.SmartDataCollectionApi + sensorTable + HttpService.StorageSmartmonitoring;
         SimpleResponse resp = HttpService.get(checkUrl);
