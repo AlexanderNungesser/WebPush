@@ -187,6 +187,8 @@ public class TriggerService {
      */
     public static SimpleResponse registerJob(int datajobId) {
         String startJobURL = HttpService.SmartDataJobsApi
+                + "start"
+                + HttpService.SmartDataUrl
                 + "&" + HttpService.StorageSmartmonitoring.substring(1)
                 + "&collection=" + HttpService.DataJobs
                 + "&id=" + datajobId;
@@ -217,22 +219,27 @@ public class TriggerService {
 
         int dataJobId = getJobId(triggerId);
 
-        final String deleteJobURL = HttpService.SmartDataRecordsApi
-                + HttpService.DataJobs
-                + "/" + dataJobId
-                + HttpService.StorageGamification;
+        SimpleResponse deactivateJobResp = deactivateJob(dataJobId);
 
-        SimpleResponse deleteJobResp = HttpService.delete(deleteJobURL);
-
-        if (deleteJobResp.getStatus() != 200) {
-            return new SimpleResponse(deleteJobResp.getStatus(), deleteJobResp.readEntity(String.class));
+        if (deactivateJobResp.getStatus() != 200) {
+            return new SimpleResponse(deactivateJobResp.getStatus(), deactivateJobResp.readEntity(String.class));
         }
 
-        return new SimpleResponse(deleteJobResp.getStatus(),
+        return new SimpleResponse(deactivateJobResp.getStatus(),
                 Json.createObjectBuilder()
                         .add("trigger_id", triggerId)
                         .add("datajob_id", dataJobId)
                         .build().toString());
+    }
+
+    private static SimpleResponse deactivateJob(int dataJobId) {
+        final String deactivateJobUrl = HttpService.SmartDataJobsApi
+                + "deactivate"
+                + HttpService.SmartDataUrl
+                + "&" + HttpService.StorageSmartmonitoring.substring(1)
+                + "&collection=" + HttpService.DataJobs
+                + "&id=" + dataJobId;
+        return HttpService.get(deactivateJobUrl);
     }
 
     /**

@@ -24,12 +24,14 @@ public class HttpService {
     public static final String SmartDataCollectionApi = "http://localhost:8080/SmartDataAirquality/smartdata/collection/";
     public static final String SmartDataRecordsApi = "http://localhost:8080/SmartDataAirquality/smartdata/records/";
     public static final String WebPushResourceApi = "http://localhost:8080/WebPush/webpush/";
-    public static final String SmartDataJobsApi = "http://localhost:8080/SmartDataJobs/smartdatajobs/jobexecution/start?smartdataurl=/SmartDataAirquality";
+    public static final String SmartDataJobsApi = "http://localhost:8080/SmartDataJobs/smartdatajobs/jobexecution/";
     public static final String StorageSmartmonitoring = "?storage=smartmonitoring";
     public static final String StorageGamification = "?storage=gamification"; 
     
     public static final String DataJobs = "datajobs";
     public static final String DataJobsParams = "datajobs_params";
+    public static final String SmartDataUrl = "?smartdataurl=/SmartDataAirquality";
+    
     
 
     // ───────────────────────────────────────────────────────────────
