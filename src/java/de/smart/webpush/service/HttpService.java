@@ -2,9 +2,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package de.smart.jpatemplate.service;
+package de.smart.webpush.service;
 
-import de.smart.jpatemplate.data.SimpleResponse;
+import de.smart.webpush.data.SimpleResponse;
 import jakarta.json.JsonObject;
 
 import java.net.URI;

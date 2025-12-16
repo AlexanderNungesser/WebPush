@@ -1,6 +1,6 @@
-package de.smart.jpatemplate.service;
+package de.smart.webpush.service;
 
-import de.smart.jpatemplate.data.SimpleResponse;
+import de.smart.webpush.data.SimpleResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;

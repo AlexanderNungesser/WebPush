@@ -1,4 +1,4 @@
-package de.smart.jpatemplate.rest;
+package de.smart.webpush.rest;
 
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
@@ -9,10 +9,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 
-import de.smart.jpatemplate.data.PushSubscription;
-import de.smart.jpatemplate.data.SubscriptionApiClient;
-import de.smart.jpatemplate.data.KeyManager;
-import de.smart.jpatemplate.data.MessagePayload;
+import de.smart.webpush.data.PushSubscription;
+import de.smart.webpush.data.SubscriptionApiClient;
+import de.smart.webpush.data.KeyManager;
+import de.smart.webpush.data.MessagePayload;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import java.util.List;

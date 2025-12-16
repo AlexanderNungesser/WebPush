@@ -1,9 +1,9 @@
-package de.smart.jpatemplate.rest;
+package de.smart.webpush.rest;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
-import de.smart.jpatemplate.config.Configuration;
+import de.smart.webpush.config.Configuration;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;

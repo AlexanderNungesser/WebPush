@@ -1,9 +1,9 @@
-package de.smart.jpatemplate.startup;
+package de.smart.webpush.startup;
 
-import de.smart.jpatemplate.data.SimpleResponse;
-import de.smart.jpatemplate.data.TriggerResult;
-import de.smart.jpatemplate.data.WebhookAction;
-import de.smart.jpatemplate.service.SensorSyncService;
+import de.smart.webpush.data.SimpleResponse;
+import de.smart.webpush.data.TriggerResult;
+import de.smart.webpush.data.WebhookAction;
+import de.smart.webpush.service.SensorSyncService;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -13,9 +13,9 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 import java.io.StringReader;
-import de.smart.jpatemplate.service.HttpService;
-import de.smart.jpatemplate.service.PropertiesWebhookService;
-import de.smart.jpatemplate.service.TriggerService;
+import de.smart.webpush.service.HttpService;
+import de.smart.webpush.service.PropertiesWebhookService;
+import de.smart.webpush.service.TriggerService;
 import jakarta.json.JsonArrayBuilder;
 import java.util.List;
 import java.io.IOException;

@@ -1,12 +1,12 @@
-package de.smart.jpatemplate.service;
+package de.smart.webpush.service;
 
 import com.cronutils.model.Cron;
 import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
-import de.smart.jpatemplate.data.SimpleResponse;
-import de.smart.jpatemplate.data.TriggerResult;
+import de.smart.webpush.data.SimpleResponse;
+import de.smart.webpush.data.TriggerResult;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;

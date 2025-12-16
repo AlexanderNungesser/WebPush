@@ -1,9 +1,9 @@
-package de.smart.jpatemplate.rest;
+package de.smart.webpush.rest;
 
-import de.smart.jpatemplate.data.SimpleResponse;
-import de.smart.jpatemplate.data.TriggerResult;
-import de.smart.jpatemplate.service.HttpService;
-import de.smart.jpatemplate.service.TriggerService;
+import de.smart.webpush.data.SimpleResponse;
+import de.smart.webpush.data.TriggerResult;
+import de.smart.webpush.service.HttpService;
+import de.smart.webpush.service.TriggerService;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;

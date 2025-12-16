@@ -1,4 +1,4 @@
-package de.smart.jpatemplate.data;
+package de.smart.webpush.data;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;

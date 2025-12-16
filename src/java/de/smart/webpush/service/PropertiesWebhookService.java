@@ -1,7 +1,7 @@
-package de.smart.jpatemplate.service;
+package de.smart.webpush.service;
 
-import de.smart.jpatemplate.data.WebhookAction;
-import de.smart.jpatemplate.rest.AdminResource;
+import de.smart.webpush.data.WebhookAction;
+import de.smart.webpush.rest.AdminResource;
 import java.io.*;
 import java.nio.file.*;
 

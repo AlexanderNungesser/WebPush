@@ -1,4 +1,4 @@
-package de.smart.jpatemplate.rest;
+package de.smart.webpush.rest;
 
 import java.util.Set;
 import jakarta.ws.rs.core.Application;
@@ -31,10 +31,9 @@ public class ApplicationConfig extends Application {
         resources.add(de.fhbielefeld.smartuser.rest.AuthenticationFilter.class);
         resources.add(de.fhbielefeld.smartuser.rest.OwnershipFilter.class);
         resources.add(de.ngi.restutils.LoggingFilter.class);
-        resources.add(de.smart.jpatemplate.rest.AdminResource.class);
-        resources.add(de.smart.jpatemplate.rest.PushResource.class);
-        resources.add(de.smart.jpatemplate.rest.SystemResource.class);
-        resources.add(de.smart.jpatemplate.rest.TemplateResource.class);
-        resources.add(de.smart.jpatemplate.rest.WebhookResource.class);
+        resources.add(de.smart.webpush.rest.AdminResource.class);
+        resources.add(de.smart.webpush.rest.PushResource.class);
+        resources.add(de.smart.webpush.rest.SystemResource.class);
+        resources.add(de.smart.webpush.rest.WebhookResource.class);
     }
 }

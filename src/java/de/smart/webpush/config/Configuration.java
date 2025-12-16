@@ -1,4 +1,4 @@
-package de.smart.jpatemplate.config;
+package de.smart.webpush.config;
 
 import java.io.FileInputStream;
 import java.io.IOException;
