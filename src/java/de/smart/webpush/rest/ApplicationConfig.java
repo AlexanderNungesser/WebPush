@@ -32,6 +32,7 @@ public class ApplicationConfig extends Application {
         resources.add(de.fhbielefeld.smartuser.rest.OwnershipFilter.class);
         resources.add(de.ngi.restutils.LoggingFilter.class);
         resources.add(de.smart.webpush.rest.AdminResource.class);
+        resources.add(de.smart.webpush.rest.ConditionResource.class);
         resources.add(de.smart.webpush.rest.PushResource.class);
         resources.add(de.smart.webpush.rest.SystemResource.class);
         resources.add(de.smart.webpush.rest.WebhookResource.class);
