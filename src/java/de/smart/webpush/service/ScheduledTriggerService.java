@@ -202,28 +202,28 @@ public class ScheduledTriggerService {
      * @return <code>SimpleResponse</code> of the deletion process
      */
     public static SimpleResponse deleteTrigger(JsonObject payload) {
-
+        
         int triggerId = payload.getInt("id");
-
         final String deleteTriggerURL = HttpService.SmartDataRecordsApi
-                + "triggers"
+                + "trigger"
                 + "/" + triggerId
                 + HttpService.StorageGamification;
-
-        SimpleResponse deleteTriggerResp = HttpService.delete(deleteTriggerURL);
-
+        SimpleResponse deleteTriggerResp = HttpService.delete(deleteTriggerURL); 
         if (deleteTriggerResp.getStatus() != 200) {
             return new SimpleResponse(deleteTriggerResp.getStatus(), deleteTriggerResp.readEntity(String.class));
         }
-
-        int dataJobId = getJobId(triggerId);
-
-        SimpleResponse deactivateJobResp = deactivateJob(dataJobId);
-
+        
+        int dataJobId = getJobId(triggerId);  
+        if(dataJobId == 0){
+             return new SimpleResponse(200, deleteTriggerResp.readEntity(String.class));
+        }else if( dataJobId == -1){ 
+             return new SimpleResponse(500, "ERROR FETCHING JOBID OF TRIGGER " + triggerId);
+        }
+        SimpleResponse deactivateJobResp = deactivateJob(dataJobId);     
         if (deactivateJobResp.getStatus() != 200) {
             return new SimpleResponse(deactivateJobResp.getStatus(), deactivateJobResp.readEntity(String.class));
         }
-
+        
         return new SimpleResponse(deactivateJobResp.getStatus(),
                 Json.createObjectBuilder()
                         .add("trigger_id", triggerId)
@@ -245,7 +245,7 @@ public class ScheduledTriggerService {
      * Get the job id of a trigger's job via the <code>triggerId</code>
      *
      * @param triggerId of the job's trigger
-     * @return job id
+     * @return job id if succesfull, -1 if an error occured and 0 if no job was found
      */
     public static int getJobId(int triggerId) {
         final String jobParamsUrl = HttpService.SmartDataRecordsApi
@@ -256,7 +256,7 @@ public class ScheduledTriggerService {
 
         SimpleResponse jobParamsResp = HttpService.get(jobParamsUrl);
         if (jobParamsResp.getStatus() != 200) {
-            return 0;
+            return -1;
         }
         String respText = jobParamsResp.readEntity(String.class);
 

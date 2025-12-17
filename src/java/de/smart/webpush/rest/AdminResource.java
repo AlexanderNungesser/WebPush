@@ -11,7 +11,9 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -25,7 +27,7 @@ public class AdminResource {
     // Create Notification Endpoint
     // ───────────────────────────────────────────────────────────────
     @POST
-    @Path("/createNotification")
+    @Path("/notification")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createNotification(String payload) {
         try (JsonReader reader = Json.createReader(new StringReader(payload))) {
@@ -78,12 +80,35 @@ public class AdminResource {
             return Response.serverError().entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
+    
+    @DELETE
+    @Path("/trigger/{id}")
+    public Response deleteTrigger(@PathParam("id") int id) {
+        try {
+            JsonObject payload = Json.createObjectBuilder()
+                    .add("id", id)
+                    .build();
+
+            SimpleResponse sr = ScheduledTriggerService.deleteTrigger(payload);
+            
+            String body = sr.readEntity(String.class);
+
+            return Response.status(sr.getStatus())
+                    .entity(body)
+                    .build();
+
+        } catch (Exception e) {
+            return Response.serverError()
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
 
     // ───────────────────────────────────────────────────────────────
     // Create Trigger Endpoint
     // ───────────────────────────────────────────────────────────────
     @POST
-    @Path("/createTrigger")
+    @Path("/trigger")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createTrigger(String payload) {
         try (JsonReader reader = Json.createReader(new StringReader(payload))) {
