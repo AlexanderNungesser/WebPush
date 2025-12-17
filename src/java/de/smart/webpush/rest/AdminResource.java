@@ -3,7 +3,7 @@ package de.smart.webpush.rest;
 import de.smart.webpush.data.SimpleResponse;
 import de.smart.webpush.data.TriggerResult;
 import de.smart.webpush.service.HttpService;
-import de.smart.webpush.service.TriggerService;
+import de.smart.webpush.service.ScheduledTriggerService;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 
 @Path("/admin")
 public class AdminResource {
-    
+
     // ───────────────────────────────────────────────────────────────
     // Create Notification Endpoint
     // ───────────────────────────────────────────────────────────────
@@ -55,19 +55,19 @@ public class AdminResource {
                         .build();
             }
 
-            SimpleResponse resp = post("notification", notification);        
+            SimpleResponse resp = post("notification", notification);
             String respbody = resp.readEntity(String.class).trim();
             int notificationId = Integer.parseInt(respbody);
 
             JsonArray actions = json.getJsonArray("actions");
             if (actions != null) {
                 for (int i = 0; i < actions.size(); i++) {
-                    String actionStr = actions.getString(i);  
+                    String actionStr = actions.getString(i);
                     int actionId = Integer.parseInt(actionStr);
                     JsonObject notifAction = Json.createObjectBuilder()
-                        .add("notification_id", notificationId)
-                        .add("action_id", actionId)
-                        .build();
+                            .add("notification_id", notificationId)
+                            .add("action_id", actionId)
+                            .build();
                     post("notification_action", notifAction);
                 }
             }
@@ -78,7 +78,6 @@ public class AdminResource {
             return Response.serverError().entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
-
 
     // ───────────────────────────────────────────────────────────────
     // Create Trigger Endpoint
@@ -98,7 +97,7 @@ public class AdminResource {
                     .add("description", description);
 
             if (scheduleCron != null) {
-                if(!TriggerService.isValidCron(scheduleCron)) {
+                if (!ScheduledTriggerService.isValidCron(scheduleCron)) {
                     return Response.status(Response.Status.BAD_REQUEST)
                             .entity("{\"error\":\"Invalid cron expression: " + scheduleCron + "\"}")
                             .build();
@@ -110,17 +109,19 @@ public class AdminResource {
                 scheduleTimestamp += ":00";
                 builder.add("time_once", scheduleTimestamp);
             }
-                
+
             JsonObject trigger = builder.build();
-            
+
             SimpleResponse triggerresp = post("trigger", trigger);
             String trigrespbody = triggerresp.readEntity(String.class).trim();
             int triggerId = Integer.parseInt(trigrespbody);
 
             createConditions(json, triggerId);
-            
-            TriggerResult tr = TriggerService.getTrigger(triggerId, trigger);
-            SimpleResponse res = TriggerService.createJobForTrigger(tr);
+
+            if (scheduleCron != null || scheduleTimestamp != null) {
+                TriggerResult tr = ScheduledTriggerService.getTrigger(triggerId, trigger);
+                SimpleResponse res = ScheduledTriggerService.createJobForTrigger(tr);
+            }
 
             return Response.status(triggerresp.getStatus()).entity(triggerresp.readEntity(String.class)).build();
 
@@ -131,7 +132,9 @@ public class AdminResource {
 
     public void createConditions(JsonObject json, int triggerId) {
         for (String key : json.keySet()) {
-            if (!key.startsWith("data_field_")) continue;
+            if (!key.startsWith("data_field_")) {
+                continue;
+            }
 
             String index = key.substring("data_field_".length());
 
@@ -178,52 +181,56 @@ public class AdminResource {
                 break;
             case 9:
                 String rangeStart = json.getString("range_start_" + index, "");
-                String rangeEnd   = json.getString("range_end_" + index, "");
+                String rangeEnd = json.getString("range_end_" + index, "");
 
                 if (!rangeStart.isEmpty()) {
                     String[] partsStart = rangeStart.split("T");
                     String dateStart = partsStart[0];
                     String timeStart = partsStart.length > 1 ? partsStart[1] : "00:00";
-                
+
                     conditionBuilder.add("date_start", dateStart);
                     conditionBuilder.add("time_start", timeStart);
                 }
-            
+
                 if (!rangeEnd.isEmpty()) {
                     String[] partsEnd = rangeEnd.split("T");
                     String dateEnd = partsEnd[0];
                     String timeEnd = partsEnd.length > 1 ? partsEnd[1] : "00:00";
-                
+
                     conditionBuilder.add("date_end", dateEnd);
                     conditionBuilder.add("time_end", timeEnd);
                 }
                 break;
         }
 
-
         JsonObject condition = conditionBuilder.build();
 
         return condition;
     }
 
-
     public static JsonObject findExisting(String resource, JsonObject filterJson) {
         try {
-            if (filterJson == null || filterJson.isEmpty()) return null;
+            if (filterJson == null || filterJson.isEmpty()) {
+                return null;
+            }
 
             StringBuilder url = new StringBuilder(
                     HttpService.SmartDataRecordsApi + resource + HttpService.StorageGamification
             );
 
             SimpleResponse resp = HttpService.get(url.toString());
-            if (resp.getStatus() != 200) return null;
+            if (resp.getStatus() != 200) {
+                return null;
+            }
 
             String body = resp.readEntity(String.class);
 
             try (JsonReader reader = Json.createReader(new StringReader(body))) {
 
                 JsonObject root = reader.readObject();
-                if (!root.containsKey("records")) return null;
+                if (!root.containsKey("records")) {
+                    return null;
+                }
 
                 var arr = root.getJsonArray("records");
 
@@ -233,7 +240,9 @@ public class AdminResource {
                     boolean match = true;
 
                     for (String key : filterJson.keySet()) {
-                        if (filterJson.isNull(key)) continue;
+                        if (filterJson.isNull(key)) {
+                            continue;
+                        }
 
                         String filterValue = filterJson.get(key).toString().replace("\"", "");
 

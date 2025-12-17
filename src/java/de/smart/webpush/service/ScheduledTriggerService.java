@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class TriggerService {
+public class ScheduledTriggerService {
 
     private static final CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ));
 
@@ -64,7 +64,7 @@ public class TriggerService {
         if (cron == null) {
             tr = new TriggerResult(triggerId, baseTime, 0);
         } else {
-            tr = TriggerService.parseCron(cron, baseTime, triggerId)
+            tr = ScheduledTriggerService.parseCron(cron, baseTime, triggerId)
                     .orElseThrow(() -> new IllegalStateException("Cron konnte nicht geparst werden"));
         }
         return tr;
@@ -112,17 +112,16 @@ public class TriggerService {
     /**
      * Check if a job for a trigger already exists
      *
-     * @param trigger that should be checked
+     * @param triggerId of the trigger that should be checked
      * @return <code>true</code> if a job already exists, otherwise
      * <code>false</code>
      */
-    public static boolean jobAlreadyExists(TriggerResult trigger) {
-        return (0 != getJobId(trigger.id()));
+    public static boolean jobAlreadyExists(int triggerId) {
+        return (0 != getJobId(triggerId));
     }
 
     /**
-     * Create a job for a scheduled trigger defined in a
-     * <code>TriggerResult</code>
+     * Create a job for a scheduled trigger defined in a payload
      *
      * @param tr <code>TriggerResult</code> of the trigger
      * @return <code>SimpleResponse</code> of the creation process

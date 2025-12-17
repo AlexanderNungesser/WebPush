@@ -15,7 +15,7 @@ import jakarta.servlet.annotation.WebListener;
 import java.io.StringReader;
 import de.smart.webpush.service.HttpService;
 import de.smart.webpush.service.PropertiesWebhookService;
-import de.smart.webpush.service.TriggerService;
+import de.smart.webpush.service.ScheduledTriggerService;
 import jakarta.json.JsonArrayBuilder;
 import java.util.List;
 import java.io.IOException;
@@ -71,7 +71,7 @@ public class AppStartupListener implements ServletContextListener {
         } catch (IOException e) {
             //do nothing
         }
-        List<TriggerResult> triggers = TriggerService.getTriggers();
+        List<TriggerResult> triggers = ScheduledTriggerService.getTriggers();
         if (triggers == null || triggers.isEmpty()) {
             return;
         }
@@ -80,10 +80,10 @@ public class AppStartupListener implements ServletContextListener {
         System.out.println("=== Job Creation for all Triggers ===");
 
         for (TriggerResult trigger : triggers) {
-            if (TriggerService.jobAlreadyExists(trigger)) {
+            if (ScheduledTriggerService.jobAlreadyExists(trigger.id())) {
                 continue;
             }
-            SimpleResponse r = TriggerService.createJobForTrigger(trigger);
+            SimpleResponse r = ScheduledTriggerService.createJobForTrigger(trigger);
             if (r.getStatus() != 200) {
                 resp.add(Json.createObjectBuilder().add("error", "could not create Job for trigger " + trigger.id()));
             } else {
