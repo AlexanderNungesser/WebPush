@@ -4,6 +4,7 @@ import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.smart.webpush.data.SimpleResponse;
 import de.smart.webpush.service.HttpService;
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.GET;
@@ -54,30 +55,38 @@ public class ConditionResource {
         }
 
         smartdataurl += "/smartdata/records/";
-        
+
         if (collection == null) {
             rob.setStatus(Response.Status.BAD_REQUEST);
             rob.addErrorMessage("Parameter >collection< is missing.");
             return rob.toResponse();
         }
-        
+
         smartdataurl += collection
                 + "?storage=" + storage
                 + "&countonly=true";
 
-        String filter = "&filter=ts,";
+        if (start == null) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("Parameter >start< is missing.");
+            return rob.toResponse();
+        }
+
+        String filter;
         if (end != null) {
-            filter += "ge," + start + "&filter,lt," + end;
+            filter = "&filter=ts,ge," + start + "&filter=ts,lt," + end;
         } else {
-            filter += "gt," + start;
+            filter = "&filter=ts,gt," + start;
         }
 
         smartdataurl += filter;
-        
+
         SimpleResponse countResp = HttpService.get(smartdataurl);
 
         if (countResp.getStatus() != 200) {
-            return Response.serverError().build();
+            rob.setStatus(Response.Status.fromStatusCode(countResp.getStatus()));
+            rob.addErrorMessage(countResp.readEntity(String.class));
+            return rob.toResponse();
         }
 
         String respText = countResp.readEntity(String.class);
@@ -87,9 +96,21 @@ public class ConditionResource {
             resp = reader.readObject();
         }
 
-        int count = resp.getJsonArray("records")
-                .getJsonObject(0)
-                .getInt("count");
+        JsonArray records = resp.getJsonArray("records");
+        if (records == null || records.isEmpty()) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("No records returned from SmartData.");
+            return rob.toResponse();
+        }
+
+        JsonObject obj = records.getJsonObject(0);
+        if (!obj.containsKey("count")) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Count field missing in response.");
+            return rob.toResponse();
+        }
+
+        int count = obj.getInt("count");
 
         rob.add("count", count);
         rob.setStatus(Response.Status.OK);
