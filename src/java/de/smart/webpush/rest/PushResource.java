@@ -30,11 +30,13 @@ public class PushResource {
     private static final PushService pushService = new PushService();
     private final Jsonb builder = JsonbBuilder.create();
     private KeyPair keyPair;
-
+    private static final String SUBJECT = "mailto:max.steidle@hsbi.de";
+    
     private synchronized void ensureKeyPair() {
         if (keyPair == null) {
             keyPair = KeyManager.getKeyPair();
             pushService.setKeyPair(keyPair);
+            pushService.setSubject(SUBJECT);
         }
     }
     
@@ -185,8 +187,8 @@ public class PushResource {
                     .urgency(Urgency.HIGH)
                     .build();
             
-            
-            pushService.send(notification);
+            System.out.println(pushService.send(notification));
+            //Status Code: 403: forbidden, 410: gone (löschen), 201: success
             sent.add(sub.getEndpoint());
 
         } catch (Exception e) {
