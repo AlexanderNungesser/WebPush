@@ -15,9 +15,12 @@ import de.smart.webpush.data.KeyManager;
 import de.smart.webpush.data.MessagePayload;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import nl.martijndwars.webpush.Notification.NotificationBuilder;
+import nl.martijndwars.webpush.Urgency;
 
 
 @Path("/push")
@@ -164,13 +167,25 @@ public class PushResource {
                                     List<String> sent, List<String> failed) {
         try {
             String messageJson = builder.toJson(payload);
+            /*
             Notification notification = new Notification(
                     sub.getEndpoint(),
                     PushSubscription.getUserPublicKey(sub.getKey()),
                     PushSubscription.convertKeyToBytes(sub.getAuth()),
                     messageJson.getBytes()
             );
-
+            */
+            
+            Notification notification = Notification.builder()
+                    .endpoint(sub.getEndpoint())
+                    .userPublicKey(PushSubscription.getUserPublicKey(sub.getKey()))
+                    .userAuth(PushSubscription.convertKeyToBytes(sub.getAuth()))
+                    .payload(messageJson.getBytes(StandardCharsets.UTF_8))
+                    .ttl(300)
+                    .urgency(Urgency.HIGH)
+                    .build();
+            
+            
             pushService.send(notification);
             sent.add(sub.getEndpoint());
 
