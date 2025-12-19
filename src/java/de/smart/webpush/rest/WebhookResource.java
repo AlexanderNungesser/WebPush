@@ -4,23 +4,17 @@ import de.smart.webpush.data.SimpleResponse;
 import de.smart.webpush.service.HttpService;
 import de.smart.webpush.service.SensorSyncService;
 import jakarta.json.Json;
-import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.POST;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.StringReader;
-import netscape.javascript.JSObject;
 
 /**
  *
@@ -83,6 +77,14 @@ public class WebhookResource {
         System.out.println("=== Webhook active: sensor_push ===");
         System.out.println("Edits in: " + tablename);
         System.out.println("payload: " + payload);
+
+//        JsonObject data = Json.createReader(new StringReader(payload)).readObject();
+//
+//        if (!data.getBoolean("finished")) {
+//            return Response.ok()
+//                    .entity("Webhook fired for " + tablename)
+//                    .build();
+//        }
 
         //start sensor-specific job
         String jobName = SensorSyncService.jobNamePrefix + tablename.replace(" ", "_");
