@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import nl.martijndwars.webpush.Notification.NotificationBuilder;
 import nl.martijndwars.webpush.Urgency;
 
 
@@ -104,15 +103,16 @@ public class PushResource {
         }
         
         List<String> sentTo = new ArrayList<>();
-        List<String> failed = new ArrayList<>();
+        List<String> failed = new ArrayList<>();        
+        List<String> deleted = new ArrayList<>();
 
         try {
             
             for (PushSubscription sub : client.findAll()) {
-                sendToSubscription(sub, payload, sentTo, failed);
+                sendToSubscription(sub, payload, sentTo, failed, deleted);
             }
 
-            return Response.ok(Map.of("sent", sentTo, "failed", failed))
+            return Response.ok(Map.of("sent", sentTo, "failed", failed, "deleted", deleted))
                     .build();
             
         } catch (Exception e) {
@@ -133,6 +133,7 @@ public class PushResource {
         
         List<String> sentTo = new ArrayList<>();
         List<String> failed = new ArrayList<>();
+        List<String> deleted = new ArrayList<>();
 
         try {  
             PushSubscription sub = client.getSubscription(id);
@@ -143,9 +144,9 @@ public class PushResource {
                         .build();
             }
             
-            sendToSubscription(sub, payload, sentTo, failed);
+            sendToSubscription(sub, payload, sentTo, failed, deleted);
 
-            return Response.ok(Map.of("sent", sentTo, "failed", failed))
+            return Response.ok(Map.of("sent", sentTo, "failed", failed, "deleted", deleted))
                     .build();
             
         } catch (Exception e) {
@@ -165,18 +166,9 @@ public class PushResource {
                 .build();
     }
     
-    private void sendToSubscription(PushSubscription sub,  MessagePayload payload, 
-                                    List<String> sent, List<String> failed) {
+    private void sendToSubscription(PushSubscription sub, MessagePayload payload, List<String> sent, List<String> failed, List<String> deleted) {
         try {
             String messageJson = builder.toJson(payload);
-            /*
-            Notification notification = new Notification(
-                    sub.getEndpoint(),
-                    PushSubscription.getUserPublicKey(sub.getKey()),
-                    PushSubscription.convertKeyToBytes(sub.getAuth()),
-                    messageJson.getBytes()
-            );
-            */
             
             Notification notification = Notification.builder()
                     .endpoint(sub.getEndpoint())
@@ -186,14 +178,17 @@ public class PushResource {
                     .ttl(300)
                     .urgency(Urgency.HIGH)
                     .build();
+            var response = pushService.send(notification);
+            int status = response.getStatusLine().getStatusCode();
             
-            System.out.println(pushService.send(notification));
-            //Status Code: 403: forbidden, 410: gone (löschen), 201: success
-            sent.add(sub.getEndpoint());
-
+            switch(status) {
+                case 201 -> sent.add(sub.getEndpoint());
+                case 404, 410 -> deleted.add(sub.getEndpoint());
+                case 403 -> failed.add(sub.getEndpoint());
+                default -> failed.add(sub.getEndpoint());
+            }
         } catch (Exception e) {
             failed.add(sub.getEndpoint());
         }
-    }
-            
+    } 
 }
