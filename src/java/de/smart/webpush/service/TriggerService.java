@@ -15,9 +15,6 @@ import java.io.StringReader;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -26,13 +23,6 @@ import java.util.stream.Collectors;
 public class TriggerService {
 
     private static final CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ));
-
-    private static final DateTimeFormatter fmt = new DateTimeFormatterBuilder()
-            .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
-            .optionalStart()
-            .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
-            .optionalEnd()
-            .toFormatter();
 
     /**
      * Get a scheduled trigger from a <code>JsonObject</code>
@@ -49,7 +39,7 @@ public class TriggerService {
         JsonObjectBuilder schedule = Json.createObjectBuilder();
 
         if (timeOnce != null) {
-            schedule.add("next", LocalDateTime.parse(timeOnce).format(fmt))
+            schedule.add("next", LocalDateTime.parse(timeOnce).toString())
                     .add("seconds", 0);
         } else if (cron != null) {
             schedule.addAll(TriggerService.parseCron(cron));
@@ -100,7 +90,7 @@ public class TriggerService {
         }
 
         List<JsonObject> sortedTriggers = triggers.stream()
-                .sorted(Comparator.comparing(e -> LocalDateTime.parse(e.getString("next"), fmt)))
+                .sorted(Comparator.comparing(e -> LocalDateTime.parse(e.getString("next"))))
                 .collect(Collectors.toList());
 
         return sortedTriggers;
@@ -134,7 +124,7 @@ public class TriggerService {
                 .add("desc", "Job for time-based Trigger")
                 .add("action", "SendNotification")
                 .add("active", true)
-                .add("start", LocalDateTime.parse(trigger.getString("next"), fmt).toString());
+                .add("start", trigger.getString("next"));
 
         JsonObject jobBody = (trigger.getInt("seconds") == 0)
                 ? jsonJobBody.addNull("repeatsecs").build()
@@ -275,7 +265,7 @@ public class TriggerService {
             long seconds = Duration.between(prev, next).getSeconds();
 
             return Json.createObjectBuilder()
-                    .add("next", next.toLocalDateTime().format(fmt))
+                    .add("next", next.toLocalDateTime().toString())
                     .add("seconds", seconds);
 
         } catch (Exception e) {
