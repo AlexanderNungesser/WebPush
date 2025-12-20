@@ -1,9 +1,8 @@
 package de.smart.webpush.rest;
 
 import de.smart.webpush.data.SimpleResponse;
-import de.smart.webpush.data.TriggerResult;
 import de.smart.webpush.service.HttpService;
-import de.smart.webpush.service.ScheduledTriggerService;
+import de.smart.webpush.service.TriggerService;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -85,11 +84,7 @@ public class AdminResource {
     @Path("/trigger/{id}")
     public Response deleteTrigger(@PathParam("id") int id) {
         try {
-            JsonObject payload = Json.createObjectBuilder()
-                    .add("id", id)
-                    .build();
-
-            SimpleResponse sr = ScheduledTriggerService.deleteTrigger(payload);
+            SimpleResponse sr = TriggerService.deleteTrigger(id);
             
             String body = sr.readEntity(String.class);
 
@@ -122,7 +117,7 @@ public class AdminResource {
                     .add("description", description);
 
             if (scheduleCron != null) {
-                if (!ScheduledTriggerService.isValidCron(scheduleCron)) {
+                if (!TriggerService.isValidCron(scheduleCron)) {
                     return Response.status(Response.Status.BAD_REQUEST)
                             .entity("{\"error\":\"Invalid cron expression: " + scheduleCron + "\"}")
                             .build();
@@ -144,8 +139,8 @@ public class AdminResource {
             createConditions(json, triggerId);
 
             if (scheduleCron != null || scheduleTimestamp != null) {
-                TriggerResult tr = ScheduledTriggerService.getTrigger(triggerId, trigger);
-                SimpleResponse res = ScheduledTriggerService.createJobForTrigger(tr);
+                JsonObject tr = TriggerService.getScheduledTrigger(trigger);
+                SimpleResponse res = TriggerService.createJobForScheduledTrigger(triggerId, tr);
             }
 
             return Response.status(triggerresp.getStatus()).entity(triggerresp.readEntity(String.class)).build();

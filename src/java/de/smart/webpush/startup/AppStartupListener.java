@@ -1,7 +1,6 @@
 package de.smart.webpush.startup;
 
 import de.smart.webpush.data.SimpleResponse;
-import de.smart.webpush.data.TriggerResult;
 import de.smart.webpush.data.WebhookAction;
 import de.smart.webpush.service.SensorSyncService;
 
@@ -15,7 +14,7 @@ import jakarta.servlet.annotation.WebListener;
 import java.io.StringReader;
 import de.smart.webpush.service.HttpService;
 import de.smart.webpush.service.PropertiesWebhookService;
-import de.smart.webpush.service.ScheduledTriggerService;
+import de.smart.webpush.service.TriggerService;
 import jakarta.json.JsonArrayBuilder;
 import java.util.List;
 import java.io.IOException;
@@ -71,7 +70,7 @@ public class AppStartupListener implements ServletContextListener {
         } catch (IOException e) {
             //do nothing
         }
-        List<TriggerResult> triggers = ScheduledTriggerService.getTriggers();
+        List<JsonObject> triggers = TriggerService.getScheduledTriggers();
         if (triggers == null || triggers.isEmpty()) {
             return;
         }
@@ -79,13 +78,14 @@ public class AppStartupListener implements ServletContextListener {
 
         System.out.println("=== Job Creation for all Triggers ===");
 
-        for (TriggerResult trigger : triggers) {
-            if (ScheduledTriggerService.jobAlreadyExists(trigger.id())) {
+        for (JsonObject trigger : triggers) {
+            int triggerId = trigger.getInt("trigger_id");
+            if (TriggerService.jobAlreadyExists(triggerId)) {
                 continue;
             }
-            SimpleResponse r = ScheduledTriggerService.createJobForTrigger(trigger);
+            SimpleResponse r = TriggerService.createJobForScheduledTrigger(triggerId, trigger);
             if (r.getStatus() != 200) {
-                resp.add(Json.createObjectBuilder().add("error", "could not create Job for trigger " + trigger.id()));
+                resp.add(Json.createObjectBuilder().add("error", "could not create Job for trigger " + trigger.getInt("id")));
             } else {
                 resp.add(Json.createReader(new StringReader(r.readEntity(String.class))).readObject());
             }

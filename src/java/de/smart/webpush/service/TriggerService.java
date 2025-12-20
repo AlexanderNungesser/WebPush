@@ -6,7 +6,6 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 import de.smart.webpush.data.SimpleResponse;
-import de.smart.webpush.data.TriggerResult;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -23,10 +22,9 @@ import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ScheduledTriggerService {
+public class TriggerService {
 
     private static final CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ));
 
@@ -38,44 +36,51 @@ public class ScheduledTriggerService {
             .toFormatter();
 
     /**
-     * Get a <code>TriggerResult</code> with <code>triggerId</code> from a
-     * <code>payload</code>
+     * Get a scheduled trigger from a <code>JsonObject</code>
      *
-     * @param triggerId of the trigger
-     * @param payload of the trigger
-     * @return <code>TriggerResult</code> of the trigger
+     * @param trigger <code>JsonObject</code> of the trigger
+     * @return <code>JsonObject</code> of the scheduled trigger
      */
-    public static TriggerResult getTrigger(int triggerId, JsonObject payload) {
+    public static JsonObject getScheduledTrigger(JsonObject trigger) {
 
-        String cron = (payload.getJsonString("cron") != null)
-                ? payload.getString("cron")
+        String cron = (trigger.getJsonString("cron") != null)
+                ? trigger.getString("cron")
                 : null;
 
-        String timeOnce = (payload.getJsonString("time_once") != null)
-                ? payload.getString("time_once")
+        String timeOnce = (trigger.getJsonString("time_once") != null)
+                ? trigger.getString("time_once")
                 : null;
 
         ZonedDateTime baseTime = (timeOnce == null)
                 ? ZonedDateTime.now()
                 : ZonedDateTime.of(LocalDateTime.parse(timeOnce, fmt), ZoneId.systemDefault());
 
-        TriggerResult tr;
+        JsonObjectBuilder schedule = Json.createObjectBuilder();
 
         if (cron == null) {
-            tr = new TriggerResult(triggerId, baseTime, 0);
+            schedule.add("next", baseTime.toString()).add("seconds", 0);
         } else {
-            tr = ScheduledTriggerService.parseCron(cron, baseTime, triggerId)
-                    .orElseThrow(() -> new IllegalStateException("Cron konnte nicht geparst werden"));
+            schedule.addAll(TriggerService.parseCron(cron, baseTime));
         }
-        return tr;
+        return merge(trigger, schedule.build());
+    }
+
+    // Merges two JsonObject's into one
+    private static JsonObject merge(JsonObject original, JsonObject updates) {
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+
+        original.forEach(builder::add);
+        updates.forEach(builder::add);
+
+        return builder.build();
     }
 
     /**
-     * Get <code>TriggerResult</code> of all schedueld triggers
+     * Get <code>JsonObject</code> of all schedueld triggers
      *
-     * @return List of <code>TriggerResult</code>
+     * @return List of <code>JsonObject</code>
      */
-    public static List<TriggerResult> getTriggers() {
+    public static List<JsonObject> getScheduledTriggers() {
         final String triggerGetUrl = HttpService.SmartDataRecordsApi
                 + "view_triggers_with_schedule"
                 + HttpService.StorageGamification;
@@ -96,23 +101,23 @@ public class ScheduledTriggerService {
             return null;
         }
 
-        List<TriggerResult> triggers = new ArrayList<>();
+        List<JsonObject> triggers = new ArrayList<>();
 
-        for (JsonObject st : scheduledtriggers.getValuesAs(JsonObject.class)) {
-            triggers.add(getTrigger(st.getInt("trigger_id"), st));
+        for (JsonObject scheduledTrigger : scheduledtriggers.getValuesAs(JsonObject.class)) {
+            triggers.add(getScheduledTrigger(scheduledTrigger));
         }
 
-        List<TriggerResult> sortedTriggers = triggers.stream()
-                .sorted(Comparator.comparing(e -> e.next()))
+        List<JsonObject> sortedTriggers = triggers.stream()
+                .sorted(Comparator.comparing(e -> LocalDateTime.parse(e.getString("next"), fmt)))
                 .collect(Collectors.toList());
 
         return sortedTriggers;
     }
 
     /**
-     * Check if a job for a trigger already exists
+     * Check if a job for a scheduled trigger already exists
      *
-     * @param triggerId of the trigger that should be checked
+     * @param triggerId of the scheduled trigger that should be checked
      * @return <code>true</code> if a job already exists, otherwise
      * <code>false</code>
      */
@@ -121,26 +126,27 @@ public class ScheduledTriggerService {
     }
 
     /**
-     * Create a job for a scheduled trigger defined in a payload
+     * Create a job for a scheduled trigger
      *
-     * @param tr <code>TriggerResult</code> of the trigger
+     * @param triggerId of the scheduled trigger
+     * @param trigger <code>JsonObject</code> of the scheduled trigger
      * @return <code>SimpleResponse</code> of the creation process
      */
-    public static SimpleResponse createJobForTrigger(TriggerResult tr) {
+    public static SimpleResponse createJobForScheduledTrigger(int triggerId, JsonObject trigger) {
         final String createJobUrl = HttpService.SmartDataRecordsApi
                 + HttpService.DataJobs
                 + HttpService.StorageSmartmonitoring;
 
         JsonObjectBuilder jsonJobBody = Json.createObjectBuilder()
-                .add("name", "timeTrigger_" + tr.id())
+                .add("name", "timeTrigger_" + triggerId)
                 .add("desc", "Job for time-based Trigger")
                 .add("action", "SendNotification")
                 .add("active", true)
-                .add("start", tr.next().toLocalDateTime().format(fmt));
+                .add("start", LocalDateTime.parse(trigger.getString("next"), fmt).toString());
 
-        JsonObject jobBody = (tr.seconds() == 0)
+        JsonObject jobBody = (trigger.getInt("seconds") == 0)
                 ? jsonJobBody.addNull("repeatsecs").build()
-                : jsonJobBody.add("repeatsecs", tr.seconds()).build();
+                : jsonJobBody.add("repeatsecs", trigger.getInt("seconds")).build();
 
         SimpleResponse createJobResp = HttpService.post(createJobUrl, jobBody);
         if (createJobResp.getStatus() != 201) {
@@ -154,7 +160,7 @@ public class ScheduledTriggerService {
 
         JsonObject paramsBody = Json.createObjectBuilder()
                 .add("key", "trigger_id")
-                .add("value", tr.id())
+                .add("value", triggerId)
                 .add("datajob_id", datajobId)
                 .add("type", "int")
                 .build();
@@ -177,14 +183,8 @@ public class ScheduledTriggerService {
                         .build().toString());
     }
 
-    /**
-     * Register a Job with <code>datajobId</code> to the <code>JobRunner</code>
-     * of SmartDataJobs by starting it
-     *
-     * @param datajobId of the job that should be registerd
-     * @return <code>SimpleResponse</code> of the register process
-     */
-    public static SimpleResponse registerJob(int datajobId) {
+    //Register a Job with datajobId to the JobRunner of SmartDataJobs by starting it
+    private static SimpleResponse registerJob(int datajobId) {
         String startJobURL = HttpService.SmartDataJobsApi
                 + "start"
                 + HttpService.SmartDataUrl
@@ -196,34 +196,32 @@ public class ScheduledTriggerService {
     }
 
     /**
-     * Delete a trigger from the DB defined in a <code>payload</code>
+     * Delete a trigger from the DB defined in a <code>JsonObject</code>
      *
-     * @param payload of the trigger
+     * @param triggerId of the trigger
      * @return <code>SimpleResponse</code> of the deletion process
      */
-    public static SimpleResponse deleteTrigger(JsonObject payload) {
-        
-        int triggerId = payload.getInt("id");
+    public static SimpleResponse deleteTrigger(int triggerId) {
         final String deleteTriggerURL = HttpService.SmartDataRecordsApi
                 + "trigger"
                 + "/" + triggerId
                 + HttpService.StorageGamification;
-        SimpleResponse deleteTriggerResp = HttpService.delete(deleteTriggerURL); 
+        SimpleResponse deleteTriggerResp = HttpService.delete(deleteTriggerURL);
         if (deleteTriggerResp.getStatus() != 200) {
             return new SimpleResponse(deleteTriggerResp.getStatus(), deleteTriggerResp.readEntity(String.class));
         }
-        
-        int dataJobId = getJobId(triggerId);  
-        if(dataJobId == 0){
-             return new SimpleResponse(200, deleteTriggerResp.readEntity(String.class));
-        }else if( dataJobId == -1){ 
-             return new SimpleResponse(500, "ERROR FETCHING JOBID OF TRIGGER " + triggerId);
+
+        int dataJobId = getJobId(triggerId);
+        if (dataJobId == 0) {
+            return new SimpleResponse(200, deleteTriggerResp.readEntity(String.class));
+        } else if (dataJobId == -1) {
+            return new SimpleResponse(500, "ERROR FETCHING JOBID OF TRIGGER " + triggerId);
         }
-        SimpleResponse deactivateJobResp = deactivateJob(dataJobId);     
+        SimpleResponse deactivateJobResp = deactivateJob(dataJobId);
         if (deactivateJobResp.getStatus() != 200) {
             return new SimpleResponse(deactivateJobResp.getStatus(), deactivateJobResp.readEntity(String.class));
         }
-        
+
         return new SimpleResponse(deactivateJobResp.getStatus(),
                 Json.createObjectBuilder()
                         .add("trigger_id", triggerId)
@@ -231,6 +229,7 @@ public class ScheduledTriggerService {
                         .build().toString());
     }
 
+    // Deactivates a Job
     private static SimpleResponse deactivateJob(int dataJobId) {
         final String deactivateJobUrl = HttpService.SmartDataJobsApi
                 + "deactivate"
@@ -245,7 +244,8 @@ public class ScheduledTriggerService {
      * Get the job id of a trigger's job via the <code>triggerId</code>
      *
      * @param triggerId of the job's trigger
-     * @return job id if succesfull, -1 if an error occured and 0 if no job was found
+     * @return job id if succesfull, -1 if an error occured and 0 if no job was
+     * found
      */
     public static int getJobId(int triggerId) {
         final String jobParamsUrl = HttpService.SmartDataRecordsApi
@@ -272,16 +272,8 @@ public class ScheduledTriggerService {
         return records.getJsonObject(0).getInt("datajob_id", 0);
     }
 
-    /**
-     * Parse a CRON-String with a <code>reference</code> time of a trigger with
-     * the <code>triggerId</code>
-     *
-     * @param cronString that should be parsed
-     * @param reference from which the next execution is calculated
-     * @param triggerId of the trigger
-     * @return <code>Optional</code> of <code>TriggerResult</code>
-     */
-    public static Optional<TriggerResult> parseCron(String cronString, ZonedDateTime reference, int triggerId) {
+    // Parse a CRON-String with a reference time
+    private static JsonObjectBuilder parseCron(String cronString, ZonedDateTime reference) {
         try {
             Cron cron = parser.parse(cronString);
             ExecutionTime executionTime = ExecutionTime.forCron(cron);
@@ -289,10 +281,14 @@ public class ScheduledTriggerService {
             ZonedDateTime next = executionTime.nextExecution(reference).orElseThrow();
             ZonedDateTime prev = executionTime.lastExecution(reference).orElseThrow();
             long seconds = Duration.between(prev, next).getSeconds();
-            return Optional.of(new TriggerResult(triggerId, next, seconds));
+
+            return Json.createObjectBuilder()
+                    .add("next", next.toLocalDateTime().format(fmt))
+                    .add("seconds", seconds);
+
         } catch (Exception e) {
             e.printStackTrace();
-            return Optional.empty();
+            return Json.createObjectBuilder();
         }
     }
 
