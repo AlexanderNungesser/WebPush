@@ -14,7 +14,6 @@ import jakarta.json.JsonReader;
 import java.io.StringReader;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -43,24 +42,17 @@ public class TriggerService {
      */
     public static JsonObject getScheduledTrigger(JsonObject trigger) {
 
-        String cron = (trigger.getJsonString("cron") != null)
-                ? trigger.getString("cron")
-                : null;
+        String cron = trigger.getString("cron", null);
 
-        String timeOnce = (trigger.getJsonString("time_once") != null)
-                ? trigger.getString("time_once")
-                : null;
-
-        ZonedDateTime baseTime = (timeOnce == null)
-                ? ZonedDateTime.now()
-                : ZonedDateTime.of(LocalDateTime.parse(timeOnce, fmt), ZoneId.systemDefault());
+        String timeOnce = trigger.getString("time_once", null);
 
         JsonObjectBuilder schedule = Json.createObjectBuilder();
 
-        if (cron == null) {
-            schedule.add("next", baseTime.toString()).add("seconds", 0);
-        } else {
-            schedule.addAll(TriggerService.parseCron(cron, baseTime));
+        if (timeOnce != null) {
+            schedule.add("next", LocalDateTime.parse(timeOnce).format(fmt))
+                    .add("seconds", 0);
+        } else if (cron != null) {
+            schedule.addAll(TriggerService.parseCron(cron));
         }
         return merge(trigger, schedule.build());
     }
@@ -273,11 +265,11 @@ public class TriggerService {
     }
 
     // Parse a CRON-String with a reference time
-    private static JsonObjectBuilder parseCron(String cronString, ZonedDateTime reference) {
+    private static JsonObjectBuilder parseCron(String cronString) {
         try {
             Cron cron = parser.parse(cronString);
             ExecutionTime executionTime = ExecutionTime.forCron(cron);
-
+            ZonedDateTime reference = ZonedDateTime.now();
             ZonedDateTime next = executionTime.nextExecution(reference).orElseThrow();
             ZonedDateTime prev = executionTime.lastExecution(reference).orElseThrow();
             long seconds = Duration.between(prev, next).getSeconds();
