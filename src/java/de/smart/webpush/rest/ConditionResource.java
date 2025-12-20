@@ -2,13 +2,16 @@ package de.smart.webpush.rest;
 
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.smart.webpush.data.SimpleResponse;
+import de.smart.webpush.service.ConditionService;
 import de.smart.webpush.service.HttpService;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -50,11 +53,7 @@ public class ConditionResource {
             return rob.toResponse();
         }
 
-        if (smartdataurl.startsWith("/")) {
-            smartdataurl = "http://localhost:8080" + smartdataurl;
-        }
-
-        smartdataurl += "/smartdata/records/";
+        String smartDataRecordsUrl = normalizeSmartDataUrl(smartdataurl);
 
         if (collection == null) {
             rob.setStatus(Response.Status.BAD_REQUEST);
@@ -62,7 +61,7 @@ public class ConditionResource {
             return rob.toResponse();
         }
 
-        smartdataurl += collection
+        smartDataRecordsUrl += collection
                 + "?storage=" + storage
                 + "&countonly=true";
 
@@ -79,9 +78,9 @@ public class ConditionResource {
             filter = "&filter=ts,gt," + start;
         }
 
-        smartdataurl += filter;
+        smartDataRecordsUrl += filter;
 
-        SimpleResponse countResp = HttpService.get(smartdataurl);
+        SimpleResponse countResp = HttpService.get(smartDataRecordsUrl);
 
         if (countResp.getStatus() != 200) {
             rob.setStatus(Response.Status.fromStatusCode(countResp.getStatus()));
@@ -115,5 +114,59 @@ public class ConditionResource {
         rob.add("count", count);
         rob.setStatus(Response.Status.OK);
         return rob.toResponse();
+    }
+
+    @GET
+    @Path("/progress/{triggerId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Progress",
+            description = "Calculates the progress of the conditions of a trigger")
+    @APIResponse(
+            responseCode = "200",
+            description = "Progress of all conditions of a trigger")
+    @APIResponse(
+            responseCode = "404",
+            description = "Trigger could not be found")
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal error")
+    public Response getProgress(@Parameter(description = "Id of the Trigger", required = true, example = "1") @PathParam("triggerId") int triggerId,
+            @Parameter(description = "SmartData URL", required = true, example = "/SmartData") @QueryParam("smartdataurl") String smartdataurl,
+            @Parameter(description = "Id of the Group", required = true, example = "1") @QueryParam("groupId") int groupId) {
+
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        String smartDataRecordsUrl = normalizeSmartDataUrl(smartdataurl);
+
+        JsonObject group = HttpService.getFirstRecord(smartDataRecordsUrl + "view_groups" + HttpService.StorageGamification + "&filter=group_id,eq," + groupId);
+
+        JsonObject trigger = HttpService.getFirstRecord(smartDataRecordsUrl + "trigger/" + triggerId + HttpService.StorageGamification);
+
+        String triggerUrl = smartDataRecordsUrl;
+
+        if (trigger.containsKey("cron") || trigger.containsKey("time_once")) {
+            triggerUrl += "view_triggers_with_schedule";
+        } else {
+            triggerUrl += "view_triggers_without_schedule";
+        }
+
+        triggerUrl += HttpService.StorageGamification + "&filter=trigger_id,eq," + triggerId;
+
+        JsonArray conditions = HttpService.getFirstRecord(triggerUrl).getJsonArray("conditions");
+
+        JsonArrayBuilder progress = Json.createArrayBuilder();
+        for (JsonObject condition : conditions.getValuesAs(JsonObject.class)) {
+            
+            progress.add(ConditionService.evaluateCondition(condition, group, smartDataRecordsUrl));
+            
+        }
+        rob.add("progress", progress.build());
+        rob.setStatus(Response.Status.OK);
+        return rob.toResponse();
+    }
+
+    private String normalizeSmartDataUrl(String base) {
+        String normalized = base.startsWith("/") ? base.substring(1) : base;
+        return "http://localhost:8080/" + normalized + "/smartdata/records/";
     }
 }

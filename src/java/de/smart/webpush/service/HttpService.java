@@ -5,7 +5,10 @@
 package de.smart.webpush.service;
 
 import de.smart.webpush.data.SimpleResponse;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import java.io.StringReader;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -98,6 +101,17 @@ public class HttpService {
         } catch (Exception e) {
             String err = "{\"error\":\"DELETE request failed: " + e.getMessage() + "\"}";
             return new SimpleResponse(500, err);
+        }
+    }
+
+    public static JsonObject getFirstRecord(String url) {
+        SimpleResponse simpleResponse = HttpService.get(url);
+        if (simpleResponse.getStatus() != 200) {
+            return Json.createObjectBuilder().build();
+        }
+        try (JsonReader reader = Json.createReader(new StringReader(simpleResponse.readEntity(String.class)))) {
+            JsonObject response = reader.readObject();
+            return response.getJsonArray("records").getJsonObject(0);
         }
     }
 }
