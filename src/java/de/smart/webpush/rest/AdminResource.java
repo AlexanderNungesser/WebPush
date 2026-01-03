@@ -80,6 +80,9 @@ public class AdminResource {
         }
     }
     
+    // ───────────────────────────────────────────────────────────────
+    // Delete Trigger Endpoint
+    // ───────────────────────────────────────────────────────────────
     @DELETE
     @Path("/trigger/{id}")
     public Response deleteTrigger(@PathParam("id") int id) {
@@ -135,8 +138,8 @@ public class AdminResource {
             String trigrespbody = triggerresp.readEntity(String.class).trim();
             int triggerId = Integer.parseInt(trigrespbody);
 
-            createConditions(json, triggerId);
-
+            processConditions(json, triggerId);
+            
             if (scheduleCron != null || scheduleTimestamp != null) {
                 JsonObject tr = TriggerService.getScheduledTrigger(trigger);
                 SimpleResponse res = TriggerService.createJobForScheduledTrigger(triggerId, tr);
@@ -148,59 +151,89 @@ public class AdminResource {
             return Response.serverError().entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
+    
 
-    public void createConditions(JsonObject json, int triggerId) {
-        for (String key : json.keySet()) {
-            if (!key.startsWith("data_field_")) {
-                continue;
-            }
+    // ───────────────────────────────────────────────────────────────
+    // Create Trigger Condition Endpoint
+    // ───────────────────────────────────────────────────────────────
+    @POST
+    @Path("/trigger/condition")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response createTriggerCondition(String payload) {
+        try (JsonReader reader = Json.createReader(new StringReader(payload))) {
+            JsonObject json = reader.readObject();
+            int triggerId = json.getInt("trigger_id");
 
-            String index = key.substring("data_field_".length());
+            processConditions(json, triggerId); 
 
-            int dataField = json.getInt("data_field_" + index);
-            String operator = json.getString("operator_" + index, "==");
-            BigDecimal threshold = json.getJsonNumber("threshold_" + index).bigDecimalValue();
+            return Response.ok().build();
 
-            JsonObjectBuilder conditionBuilder = Json.createObjectBuilder()
-                    .add("type_id", dataField)
-                    .add("operator", operator)
-                    .add("threshold", threshold);
-
-            JsonObject condition = AddPeriod(json, index, conditionBuilder);
-
-            JsonObject existingCondition = findExisting("condition", condition);
-            int conditionId;
-
-            if (existingCondition == null) {
-                SimpleResponse condResp = post("condition", condition);
-                conditionId = Integer.parseInt(condResp.readEntity(String.class).trim());
-            } else {
-                conditionId = existingCondition.getInt("id");
-            }
-
-            JsonObject triggerCond = Json.createObjectBuilder()
-                    .add("trigger_id", triggerId)
-                    .add("condition_id", conditionId)
+        } catch (Exception e) {
+            return Response.serverError()
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}")
                     .build();
-
-            post("trigger_condition", triggerCond);
         }
     }
+    
+    private void processConditions(JsonObject json, int triggerId) {
+        // Single Condition
+        if (json.containsKey("type_id")) {
+            createCondition(json, "", triggerId);
+        }
 
+        // Multiple Conditions 
+        for (String key : json.keySet()) {
+            if (!key.startsWith("type_id_")) continue;
+            String index = key.substring("type_id_".length());
+            createCondition(json, index, triggerId);
+        }
+    }
+    
+    private void createCondition(JsonObject json, String index, int triggerId) {
+        String suffix = index.isEmpty() ? "" : "_" + index;
+        int typeId = json.getInt("type_id" + suffix);
+        String operator = json.getString("operator" + suffix, "==");
+        BigDecimal threshold = json.getJsonNumber("threshold" + suffix).bigDecimalValue();
+
+        JsonObjectBuilder conditionBuilder = Json.createObjectBuilder()
+                .add("type_id", typeId)
+                .add("operator", operator)
+                .add("threshold", threshold);
+
+        JsonObject condition = AddPeriod(json, index, conditionBuilder);
+        JsonObject existingCondition = findExisting("condition", condition);
+
+        int conditionId;
+        if (existingCondition == null) {
+            SimpleResponse condResp = post("condition", condition);
+            conditionId = Integer.parseInt(condResp.readEntity(String.class).trim());
+        } else {
+            conditionId = existingCondition.getInt("id");
+        }
+
+        JsonObject triggerCond = Json.createObjectBuilder()
+                .add("trigger_id", triggerId)
+                .add("condition_id", conditionId)
+                .build();
+
+        post("trigger_condition", triggerCond);
+    }
+    
     private JsonObject AddPeriod(JsonObject json, String index, JsonObjectBuilder conditionBuilder) {
-        int periodId = json.getInt("period_" + index, 1);
+        String suffix = index.isEmpty() ? "" : "_" + index;
+        int periodId = json.getInt("period_id" + suffix, 1);
         conditionBuilder.add("period_id", periodId);
         switch (periodId) {
             case 7:
-                conditionBuilder.add("date_start", json.getString("period_date_" + index, ""));
+                conditionBuilder.add("date_start", json.getString("period_date" + suffix, ""));
                 break;
             case 8:
-                conditionBuilder.add("time_start", json.getString("daily_time_start_" + index));
-                conditionBuilder.add("time_end", json.getString("daily_time_end_" + index));
+                conditionBuilder.add("time_start", json.getString("daily_time_start" + suffix));
+                conditionBuilder.add("time_end", json.getString("daily_time_end" + suffix));
                 break;
             case 9:
-                String rangeStart = json.getString("range_start_" + index, "");
-                String rangeEnd = json.getString("range_end_" + index, "");
+                String rangeStart = json.getString("range_start" + suffix, "");
+                String rangeEnd = json.getString("range_end" + suffix, "");
 
                 if (!rangeStart.isEmpty()) {
                     String[] partsStart = rangeStart.split("T");
