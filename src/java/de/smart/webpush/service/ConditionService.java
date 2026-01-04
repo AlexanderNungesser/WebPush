@@ -105,9 +105,12 @@ public class ConditionService {
         boolean isPeriodic = condition.getBoolean("periodic");
 
         if (isPeriodic) {
-            String lActivity = group.getString("last_activity");
+            String lActivity = group.getString("last_activity", null);
             if (lActivity == null) {
                 return Json.createObjectBuilder()
+                        .addNull("value")
+                        .add("operator", condition.getString("operator"))
+                        .add("threshold", condition.getJsonNumber("threshold"))
                         .add("status", Response.Status.BAD_REQUEST.getStatusCode())
                         .add("error", "Could not calc Period, because >last_activity< is null")
                         .build();
@@ -125,6 +128,9 @@ public class ConditionService {
 
         if (dataResp.getStatus() != 200) {
             return Json.createObjectBuilder()
+                    .addNull("value")
+                    .add("operator", condition.getString("operator"))
+                    .add("threshold", condition.getJsonNumber("threshold"))
                     .add("status", Response.Status.INTERNAL_SERVER_ERROR.getStatusCode())
                     .add("error", "Something went wrong during getting of " + type + " out of " + dataResp.readEntity(String.class))
                     .build();
