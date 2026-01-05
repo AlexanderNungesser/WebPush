@@ -27,10 +27,11 @@ public class ApplicationConfig extends Application {
     private void addRestResourceClasses(Set<Class<?>> resources) {
         resources.add(de.fhbielefeld.scl.rest.exceptions.handlers.GeneralExceptionMapper.class);
         resources.add(de.fhbielefeld.scl.rest.util.CORSFilter.class);
-        resources.add(de.ngi.restutils.LoggingFilter.class)
-        resources.add(de.smart.webpush.rest.AdminResource.class)
+        resources.add(de.ngi.restutils.LoggingFilter.class);
+        resources.add(de.smart.webpush.rest.AdminResource.class);
         resources.add(de.smart.webpush.rest.ConditionResource.class);
         resources.add(de.smart.webpush.rest.PushResource.class);
-        resources.add(de.smart.webpush.rest.SystemResource.class)
-        resources.add(de.smart.webpush.rest.WebhookResource.class)    }
+        resources.add(de.smart.webpush.rest.SystemResource.class);
+        resources.add(de.smart.webpush.rest.WebhookResource.class);
+    }
 }

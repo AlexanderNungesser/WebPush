@@ -228,6 +228,69 @@ public class AdminResource {
         }
     }
     
+    // ───────────────────────────────────────────────────────────────
+    // Create Achievement Endpoint
+    // ───────────────────────────────────────────────────────────────
+    @POST
+    @Path("/achievement")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response createAchievement(String payload) {
+        try (JsonReader reader = Json.createReader(new StringReader(payload))) {
+            JsonObject json = reader.readObject();
+            System.out.println("Start");
+            String title = json.getString("title");
+            String description = json.getString("description");
+            String body = json.getString("body");
+            
+            JsonObjectBuilder achievementSetBuilder = Json.createObjectBuilder()
+                                                    .add("title", title)
+                                                    .add("description", description)
+                                                    .add("body", body);
+            System.out.println("Vor for");
+            for (int i = 1; i <= 3; i++) {
+                JsonObject trigger = Json.createObjectBuilder()
+                    .add("description", description)
+                    .build();
+                System.out.println("1" + i);
+                SimpleResponse triggerResp = post("trigger",  trigger);
+                String triggerRespBody = triggerResp.readEntity(String.class).trim();
+                int triggerId = Integer.parseInt(triggerRespBody);
+                
+                System.out.println("2" + i + json.toString());
+                JsonObject obj = json.getJsonObject("img_" + i);
+                System.out.println("2b" + i + obj.toString());
+                String url = obj.getString("name");
+                
+                System.out.println("3" + i);
+                JsonObject achievementTier = Json.createObjectBuilder()
+                        .add("trigger_id", triggerId)
+                        .add("reward_xp", json.getInt("xp_" + i))
+                        .add("image_url", "/WebPush-PWA/content/" + url)
+                        .build();
+                
+                System.out.println("4" + i);
+                SimpleResponse tierResp = post("achievement_tier",  achievementTier);
+                String tierRespBody = tierResp.readEntity(String.class).trim();
+                int tierId = Integer.parseInt(tierRespBody);
+                
+                System.out.println("5" + i);
+                achievementSetBuilder.add("tier" + i + "_id", tierId);
+            }
+            
+            System.out.println("nach for");
+            SimpleResponse setResp = post("achievement_set",  achievementSetBuilder.build());
+            String setRespBody = setResp.readEntity(String.class).trim();
+            int setId = Integer.parseInt(setRespBody);
+            
+            return Response.status(setResp.getStatus()).entity(setRespBody).build();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return Response.serverError()
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
+    
     private void processConditions(JsonObject json, int triggerId) {
         // Single Condition
         if (json.containsKey("type_id")) {
