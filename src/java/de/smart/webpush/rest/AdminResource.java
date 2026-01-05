@@ -15,13 +15,67 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
+import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import java.io.InputStream;
+import java.io.IOException;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
 import java.math.BigDecimal;
 
 @Path("/admin")
 public class AdminResource {
+    
+    @POST
+    @Path("/achievement-icon")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Response uploadFile(
+            @FormDataParam("file") InputStream uploadedInputStream,
+            @FormDataParam("file") FormDataContentDisposition fileDetail) {
 
+        if (uploadedInputStream == null || fileDetail == null) {
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity("{\"error\":\"No file uploaded.\"}")
+                .build();
+        }
+
+        try {
+            java.nio.file.Path backendDir = Paths.get(System.getProperty("user.dir"));
+
+            java.nio.file.Path uploadDir = backendDir
+                    .resolve("../docroot/WebPush-Admin-Interface/content/achievements")
+                    .normalize();
+
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir); 
+            } else if (!Files.isDirectory(uploadDir)) {
+                return Response.serverError()
+                        .entity("{\"error\":\"Upload path exists but is not a directory: " + uploadDir + "\"}")
+                        .build();
+            }
+
+            String filename = Paths.get(fileDetail.getFileName()).getFileName().toString();
+            java.nio.file.Path targetFile = uploadDir.resolve(filename);
+
+            Files.copy(uploadedInputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
+            String webPath = "/WebPush-Admin-Interface/content/achievements/" + filename;
+            return Response.ok(
+                    Json.createObjectBuilder()
+                            .add("path", webPath)
+                            .build()
+            ).build();
+
+        } catch (IOException e) {
+            return Response.serverError()
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
+
+    
     // ───────────────────────────────────────────────────────────────
     // Create Notification Endpoint
     // ───────────────────────────────────────────────────────────────
