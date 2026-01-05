@@ -157,12 +157,11 @@ public class AdminResource {
     // Create Trigger Condition Endpoint
     // ───────────────────────────────────────────────────────────────
     @POST
-    @Path("/trigger/condition")
+    @Path("/trigger/condition/{triggerId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createTriggerCondition(String payload) {
+    public Response createTriggerCondition(String payload, @PathParam("triggerId") int triggerId) {
         try (JsonReader reader = Json.createReader(new StringReader(payload))) {
             JsonObject json = reader.readObject();
-            int triggerId = json.getInt("trigger_id");
 
             processConditions(json, triggerId); 
 
