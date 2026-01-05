@@ -257,15 +257,12 @@ public class AdminResource {
                 int triggerId = Integer.parseInt(triggerRespBody);
                 
                 System.out.println("2" + i + json.toString());
-                JsonObject obj = json.getJsonObject("img_" + i);
-                System.out.println("2b" + i + obj.toString());
-                String url = obj.getString("name");
                 
                 System.out.println("3" + i);
                 JsonObject achievementTier = Json.createObjectBuilder()
                         .add("trigger_id", triggerId)
                         .add("reward_xp", json.getInt("xp_" + i))
-                        .add("image_url", "/WebPush-PWA/content/" + url)
+                        .add("image_url", json.getString("img_" + i))
                         .build();
                 
                 System.out.println("4" + i);
