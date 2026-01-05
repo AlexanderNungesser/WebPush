@@ -7,7 +7,6 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.core.Response;
 import java.io.StringReader;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -16,7 +15,7 @@ import java.util.Map;
 public class ConditionService {
 
     // Calculates the url timestamp filtering for periodic conditions
-    public static String calcPeriod(String smartDataRecordsUrl, JsonObject condition, String sensorTable, LocalDateTime start, LocalDateTime end) {
+    private static String calcPeriod(String smartDataRecordsUrl, JsonObject condition, String sensorTable, LocalDateTime start, LocalDateTime end) {
         String periodType = condition.getString("period_type");
         String time = "&start=";
         String endParam = "&end=";
@@ -76,19 +75,27 @@ public class ConditionService {
     }
 
     // Gets the measurement_process of the datapoint with ts equal to lastActivity
-    public static String getMeasurementProcess(String smartDataRecordsUrl, String sensorTable, String lastActivity) {
+    private static String getMeasurementProcess(String smartDataRecordsUrl, String sensorTable, String lastActivity) {
         String measurementProcessUrl = smartDataRecordsUrl + sensorTable + HttpService.StorageSmartmonitoring + "&filter=ts,eq," + lastActivity + "&includes=measurement_process" + "&size=1";
         JsonObject measurementProcess = HttpService.getFirstRecord(measurementProcessUrl);
         return measurementProcess.getString("measurement_process");
     }
 
     // Gets the first ts from a measurement_process
-    public static String getFirstActivity(String smartDataRecordsUrl, String sensorTable, String measurementProcess) {
+    private static String getFirstActivity(String smartDataRecordsUrl, String sensorTable, String measurementProcess) {
         String firstActivityUrl = smartDataRecordsUrl + sensorTable + HttpService.StorageSmartmonitoring + "&filter=measurement_process,eq," + measurementProcess + "&includes=ts" + "&order=ts,ASC" + "&size=1";
         JsonObject firstActivity = HttpService.getFirstRecord(firstActivityUrl);
         return firstActivity.getString("ts");
     }
 
+    /**
+     * Evaluates a condition for a group
+     * 
+     * @param condition that should be evaluated
+     * @param group that should be evaluated for
+     * @param smartDataRecordsUrl that should be used
+     * @return <code>JsonObject</code> of condition state
+     */
     public static JsonObject evaluateCondition(JsonObject condition, JsonObject group, String smartDataRecordsUrl) {
 
         String sensorTable = group.getString("data_table");
@@ -116,10 +123,10 @@ public class ConditionService {
                         .build();
             }
             LocalDateTime lastActivity = LocalDateTime.parse(lActivity);
-            String measurementProcess = ConditionService.getMeasurementProcess(smartDataRecordsUrl, sensorTable, lActivity);
-            String fActivity = ConditionService.getFirstActivity(smartDataRecordsUrl, sensorTable, measurementProcess);
+            String measurementProcess = getMeasurementProcess(smartDataRecordsUrl, sensorTable, lActivity);
+            String fActivity = getFirstActivity(smartDataRecordsUrl, sensorTable, measurementProcess);
             LocalDateTime firstActivity = LocalDateTime.parse(fActivity);
-            String period = ConditionService.calcPeriod(smartDataRecordsUrl, condition, sensorTable, firstActivity, lastActivity);
+            String period = calcPeriod(smartDataRecordsUrl, condition, sensorTable, firstActivity, lastActivity);
 
             url += period;
         }
