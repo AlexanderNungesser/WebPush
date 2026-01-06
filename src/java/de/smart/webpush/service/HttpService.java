@@ -8,6 +8,7 @@ import de.smart.webpush.data.SimpleResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
+import java.io.IOException;
 import java.io.StringReader;
 
 import java.net.URI;
@@ -81,6 +82,31 @@ public class HttpService {
     }
     public static SimpleResponse post(String url, JsonObject json) {
         return post(url, json.toString());
+    }
+    
+    // ───────────────────────────────────────────────────────────────
+    // PUT
+    // ───────────────────────────────────────────────────────────────
+    private static SimpleResponse put(String url, String body) {
+        try {
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
+
+            return new SimpleResponse(resp.statusCode(), resp.body());
+
+        } catch (IOException | InterruptedException e) {
+            String err = "{\"error\":\"PUT request failed: " + e.getMessage() + "\"}";
+            return new SimpleResponse(500, err);
+        }
+    }
+    public static SimpleResponse put(String url, JsonObject json) {
+        return put(url, json.toString());
     }
     
     // ───────────────────────────────────────────────────────────────
