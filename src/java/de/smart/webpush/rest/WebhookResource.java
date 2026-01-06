@@ -78,13 +78,19 @@ public class WebhookResource {
         System.out.println("Edits in: " + tablename);
         System.out.println("payload: " + payload);
 
-//        JsonObject data = Json.createReader(new StringReader(payload)).readObject();
-//
-//        if (!data.getBoolean("finished")) {
-//            return Response.ok()
-//                    .entity("Webhook fired for " + tablename)
-//                    .build();
-//        }
+        JsonObject data;
+        try {
+            data = Json.createReader(new StringReader(payload)).readObject();
+            if (!data.getBoolean("finished")) {
+                return Response.ok()
+                        .entity("Webhook fired for " + tablename)
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.ok()
+                    .entity("Webhook fired for " + tablename)
+                    .build();
+        }
 
         //start sensor-specific job
         String jobName = SensorSyncService.jobNamePrefix + tablename.replace(" ", "_");
