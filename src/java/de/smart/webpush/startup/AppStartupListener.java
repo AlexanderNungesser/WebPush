@@ -18,6 +18,8 @@ import de.smart.webpush.service.TriggerService;
 import jakarta.json.JsonArrayBuilder;
 import java.util.List;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /*
 Application startup listener for initializing WebPush-related components.
@@ -70,6 +72,23 @@ public class AppStartupListener implements ServletContextListener {
         } catch (IOException e) {
             //do nothing
         }
+        
+        // Set first Server Start in gamification.settings table
+        String firstServerStartGetUrl = HttpService.SmartDataRecordsApi + "settings" + HttpService.StorageGamification + "&filter=key,eq,first_server_start";
+        JsonObject firstServerStart = HttpService.getFirstRecord(firstServerStartGetUrl);
+        if(firstServerStart.getString("value").equals("")){
+            int settingsId = firstServerStart.getInt("id");
+            String firstServerStartPutUrl = HttpService.SmartDataRecordsApi + "settings/" + settingsId + HttpService.StorageGamification;
+            JsonObject body = Json.createObjectBuilder()
+                    .add("value", LocalDateTime.now().toString())
+                    .build();
+            SimpleResponse resp = HttpService.put(firstServerStartPutUrl, body);
+            if(resp.getStatus() != 200){
+                System.err.println(resp.readEntity(String.class));
+                return;
+            }
+        }
+        
         List<JsonObject> triggers = TriggerService.getScheduledTriggers();
         if (triggers == null || triggers.isEmpty()) {
             return;
