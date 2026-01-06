@@ -22,10 +22,9 @@ public class ConditionService {
 
         switch (periodType) {
             case "all":
-                String url = smartDataRecordsUrl + sensorTable + HttpService.StorageSmartmonitoring + "&includes=ts" + "&order=ts,ASC" + "&size=1";
-                JsonObject firstEntry = HttpService.getFirstRecord(url);
-                String globalFirstActivity = firstEntry.getString("ts");
-                time += globalFirstActivity;
+                String firstServerStartUrl = smartDataRecordsUrl + "settings" + HttpService.StorageGamification + "&filter=key,eq,first_server_start";
+                String firstServerStart = HttpService.getFirstRecord(firstServerStartUrl).getString("value");
+                time += firstServerStart;
                 break;
             case "year":
                 time += end.minusYears(1) + endParam + end;
