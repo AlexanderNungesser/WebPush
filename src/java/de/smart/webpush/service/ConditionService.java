@@ -161,7 +161,7 @@ public class ConditionService {
                     .getJsonNumber(type).doubleValue();
         }
         return Json.createObjectBuilder()
-                .add("value", value)
+                .add("value", Math.round(value * 100.0) / 100.0)
                 .add("type", type)
                 .add("operator", condition.getString("operator"))
                 .add("threshold", condition.getJsonNumber("threshold"))
