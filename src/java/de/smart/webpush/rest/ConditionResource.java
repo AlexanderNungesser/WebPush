@@ -156,11 +156,8 @@ public class ConditionResource {
         JsonArray conditions = HttpService.getFirstRecord(triggerUrl).getJsonArray("conditions");
 
         JsonArrayBuilder progress = Json.createArrayBuilder();
-        for (JsonObject condition : conditions.getValuesAs(JsonObject.class)) {    
-            JsonObject evaluated = ConditionService.evaluateCondition(condition, group, smartDataRecordsUrl);
-            JsonObjectBuilder builder = Json.createObjectBuilder(evaluated);
-            builder.add("type", condition.get("type"));
-            progress.add(builder.build());   
+        for (JsonObject condition : conditions.getValuesAs(JsonObject.class)) {
+            progress.add(ConditionService.evaluateCondition(condition, group, smartDataRecordsUrl));
         }
         rob.add("progress", progress.build());
         rob.setStatus(Response.Status.OK);

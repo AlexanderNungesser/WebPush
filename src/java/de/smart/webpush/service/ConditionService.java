@@ -116,6 +116,7 @@ public class ConditionService {
             if (lActivity == null) {
                 return Json.createObjectBuilder()
                         .addNull("value")
+                        .add("type", type)
                         .add("operator", condition.getString("operator"))
                         .add("threshold", condition.getJsonNumber("threshold"))
                         .add("status", Response.Status.BAD_REQUEST.getStatusCode())
@@ -136,6 +137,7 @@ public class ConditionService {
         if (dataResp.getStatus() != 200) {
             return Json.createObjectBuilder()
                     .addNull("value")
+                    .add("type", type)
                     .add("operator", condition.getString("operator"))
                     .add("threshold", condition.getJsonNumber("threshold"))
                     .add("status", Response.Status.INTERNAL_SERVER_ERROR.getStatusCode())
@@ -161,6 +163,7 @@ public class ConditionService {
         }
         return Json.createObjectBuilder()
                 .add("value", value)
+                .add("type", type)
                 .add("operator", condition.getString("operator"))
                 .add("threshold", condition.getJsonNumber("threshold"))
                 .build();
