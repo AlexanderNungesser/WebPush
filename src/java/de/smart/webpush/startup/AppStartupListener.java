@@ -72,23 +72,35 @@ public class AppStartupListener implements ServletContextListener {
         } catch (IOException e) {
             //do nothing
         }
-        
+
         // Set first Server Start in gamification.settings table
         String firstServerStartGetUrl = HttpService.SmartDataRecordsApi + "settings" + HttpService.StorageGamification + "&filter=key,eq,first_server_start";
         JsonObject firstServerStart = HttpService.getFirstRecord(firstServerStartGetUrl);
-        if(firstServerStart.getString("value").equals("")){
+        if (firstServerStart == null || firstServerStart.isEmpty()) {
+            String firstServerStartPostUrl = HttpService.SmartDataRecordsApi + "settings" + HttpService.StorageGamification;
+            JsonObject body = Json.createObjectBuilder()
+                    .add("key", "first_server_start")
+                    .add("value", LocalDateTime.now().toString())
+                    .add("type", "string")
+                    .build();
+            SimpleResponse resp = HttpService.post(firstServerStartPostUrl, body);
+            if (resp.getStatus() != 201) {
+                System.err.println(resp.readEntity(String.class));
+                return;
+            }
+        } else if (firstServerStart.getString("value").equals("")) {
             int settingsId = firstServerStart.getInt("id");
             String firstServerStartPutUrl = HttpService.SmartDataRecordsApi + "settings/" + settingsId + HttpService.StorageGamification;
             JsonObject body = Json.createObjectBuilder()
                     .add("value", LocalDateTime.now().toString())
                     .build();
             SimpleResponse resp = HttpService.put(firstServerStartPutUrl, body);
-            if(resp.getStatus() != 200){
+            if (resp.getStatus() != 200) {
                 System.err.println(resp.readEntity(String.class));
                 return;
             }
         }
-        
+
         List<JsonObject> triggers = TriggerService.getScheduledTriggers();
         if (triggers == null || triggers.isEmpty()) {
             return;
