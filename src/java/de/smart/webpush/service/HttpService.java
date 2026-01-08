@@ -6,6 +6,7 @@ package de.smart.webpush.service;
 
 import de.smart.webpush.data.SimpleResponse;
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import java.io.IOException;
@@ -136,8 +137,11 @@ public class HttpService {
             return Json.createObjectBuilder().build();
         }
         try (JsonReader reader = Json.createReader(new StringReader(simpleResponse.readEntity(String.class)))) {
-            JsonObject response = reader.readObject();
-            return response.getJsonArray("records").getJsonObject(0);
+            JsonArray records = reader.readObject().getJsonArray("records");
+            if (records == null || records.isEmpty()) {
+            return Json.createObjectBuilder().build();
+        }
+            return records.getJsonObject(0);
         }
     }
 }
