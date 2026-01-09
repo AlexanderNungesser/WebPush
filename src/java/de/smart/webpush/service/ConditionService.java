@@ -25,7 +25,7 @@ public class ConditionService {
                 String firstServerStartUrl = smartDataRecordsUrl + "settings" + HttpService.StorageGamification + "&filter=key,eq,first_server_start";
                 JsonObject firstServerStart = HttpService.getFirstRecord(firstServerStartUrl);
                 String firstServerStartStr = LocalDateTime.now().toString();
-                if (firstServerStart != null && firstServerStart.isEmpty()) {
+                if (firstServerStart != null && !firstServerStart.isEmpty()) {
                     firstServerStartStr = firstServerStart.getString("value");
                 }
                 time += firstServerStartStr;
