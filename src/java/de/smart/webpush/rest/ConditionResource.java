@@ -168,7 +168,7 @@ public class ConditionResource {
         
         if(record == null || record.isEmpty()){
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("No group returned from SmartData.");
+            rob.addErrorMessage("No conditions returned from SmartData.");
             return rob.toResponse();
         }
         
