@@ -23,8 +23,12 @@ public class ConditionService {
         switch (periodType) {
             case "all":
                 String firstServerStartUrl = smartDataRecordsUrl + "settings" + HttpService.StorageGamification + "&filter=key,eq,first_server_start";
-                String firstServerStart = HttpService.getFirstRecord(firstServerStartUrl).getString("value");
-                time += firstServerStart;
+                JsonObject firstServerStart = HttpService.getFirstRecord(firstServerStartUrl);
+                String firstServerStartStr = LocalDateTime.now().toString();
+                if (firstServerStart != null && firstServerStart.isEmpty()) {
+                    firstServerStartStr = firstServerStart.getString("value");
+                }
+                time += firstServerStartStr;
                 break;
             case "year":
                 time += end.minusYears(1) + endParam + end;
@@ -77,19 +81,28 @@ public class ConditionService {
     private static String getMeasurementProcess(String smartDataRecordsUrl, String sensorTable, String lastActivity) {
         String measurementProcessUrl = smartDataRecordsUrl + sensorTable + HttpService.StorageSmartmonitoring + "&filter=ts,eq," + lastActivity + "&includes=measurement_process" + "&size=1";
         JsonObject measurementProcess = HttpService.getFirstRecord(measurementProcessUrl);
+        if (measurementProcess == null || measurementProcess.isEmpty()) {
+            return null;
+        }
         return measurementProcess.getString("measurement_process");
     }
 
     // Gets the first ts from a measurement_process
     private static String getFirstActivity(String smartDataRecordsUrl, String sensorTable, String measurementProcess) {
+        if (measurementProcess == null){
+            return null;
+        }
         String firstActivityUrl = smartDataRecordsUrl + sensorTable + HttpService.StorageSmartmonitoring + "&filter=measurement_process,eq," + measurementProcess + "&includes=ts" + "&order=ts,ASC" + "&size=1";
         JsonObject firstActivity = HttpService.getFirstRecord(firstActivityUrl);
+        if (firstActivity == null || firstActivity.isEmpty()) {
+            return null;
+        }
         return firstActivity.getString("ts");
     }
 
     /**
      * Evaluates a condition for a group
-     * 
+     *
      * @param condition that should be evaluated
      * @param group that should be evaluated for
      * @param smartDataRecordsUrl that should be used
@@ -125,7 +138,7 @@ public class ConditionService {
             LocalDateTime lastActivity = LocalDateTime.parse(lActivity);
             String measurementProcess = getMeasurementProcess(smartDataRecordsUrl, sensorTable, lActivity);
             String fActivity = getFirstActivity(smartDataRecordsUrl, sensorTable, measurementProcess);
-            LocalDateTime firstActivity = LocalDateTime.parse(fActivity);
+            LocalDateTime firstActivity = (fActivity == null) ? LocalDateTime.now() : LocalDateTime.parse(fActivity);
             String period = calcPeriod(smartDataRecordsUrl, condition, sensorTable, firstActivity, lastActivity);
 
             url += period;

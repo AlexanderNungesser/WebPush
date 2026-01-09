@@ -8,7 +8,6 @@ import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -140,8 +139,20 @@ public class ConditionResource {
         String smartDataRecordsUrl = normalizeSmartDataUrl(smartdataurl);
 
         JsonObject group = HttpService.getFirstRecord(smartDataRecordsUrl + "view_groups" + HttpService.StorageGamification + "&filter=group_id,eq," + groupId);
+        
+        if(group == null || group.isEmpty()){
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("No group returned from SmartData.");
+            return rob.toResponse();
+        }
 
         JsonObject trigger = HttpService.getFirstRecord(smartDataRecordsUrl + "trigger/" + triggerId + HttpService.StorageGamification);
+        
+        if(trigger == null || trigger.isEmpty()){
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("No trigger returned from SmartData.");
+            return rob.toResponse();
+        }
 
         String triggerUrl = smartDataRecordsUrl;
 
@@ -153,7 +164,15 @@ public class ConditionResource {
 
         triggerUrl += HttpService.StorageGamification + "&filter=trigger_id,eq," + triggerId;
 
-        JsonArray conditions = HttpService.getFirstRecord(triggerUrl).getJsonArray("conditions");
+        JsonObject record = HttpService.getFirstRecord(triggerUrl);
+        
+        if(record == null || record.isEmpty()){
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("No group returned from SmartData.");
+            return rob.toResponse();
+        }
+        
+        JsonArray conditions = record.getJsonArray("conditions");
 
         JsonArrayBuilder progress = Json.createArrayBuilder();
         for (JsonObject condition : conditions.getValuesAs(JsonObject.class)) {
