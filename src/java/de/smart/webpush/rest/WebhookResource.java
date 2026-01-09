@@ -16,39 +16,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.StringReader;
 
-/**
- *
- * @author Hannes
- */
 @Path("/webhook")
 public class WebhookResource {
-
-    @POST
-    @Path("/webhook")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response mirror_post(String payload) {
-        System.out.println("=== Webhook Triggered (POST) ===");
-        System.out.println("Payload: " + payload);
-        return Response.ok().build();
-    }
-
-    @PUT
-    @Path("/webhook")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response mirror_put(String payload) {
-        System.out.println("=== Webhook Triggered (PUT) ===");
-        System.out.println("Payload: " + payload);
-        return Response.ok().build();
-    }
-
-    @DELETE
-    @Path("/webhook")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response mirror_delete(String payload) {
-        System.out.println("=== Webhook Triggered (DELETE) ===");
-        System.out.println("Payload: " + payload);
-        return Response.ok().build();
-    }
 
     // ───────────────────────────────────────────────────────────────
     // Webhook: tbl_observedobject change
@@ -76,7 +45,6 @@ public class WebhookResource {
     public Response reactOnNewData(@PathParam("tablename") String tablename, String payload) {
         System.out.println("=== Webhook active: sensor_push ===");
         System.out.println("Edits in: " + tablename);
-        System.out.println("payload: " + payload);
 
         JsonObject data;
         try {
